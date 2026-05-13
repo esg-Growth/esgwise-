@@ -1,0 +1,300 @@
+.assessment {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.assessmentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+.assessmentHeader h1 { font-size: 1.5rem; }
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+.saveStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.progressCard {
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.progressLabel {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  text-align: right;
+}
+
+.assessmentLayout {}
+
+/* Tab Switcher */
+.tabSwitcher {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--space-sm);
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: calc(-1 * var(--space-sm) - 2px); /* overlap border */
+}
+
+.tabBtn:hover {
+  color: var(--color-text);
+}
+
+.tabBtnActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tabHint {
+  font-size: 0.7rem;
+  background: var(--color-success);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-sm);
+}
+
+/* Pillar Tabs */
+.pillarTabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+.pillarTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: var(--font-primary);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-base);
+}
+.pillarTab:hover {
+  border-color: var(--pillar-color, var(--color-primary));
+  color: var(--color-text);
+}
+.pillarTabActive {
+  border-color: var(--pillar-color, var(--color-primary));
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.assessmentBody {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-lg);
+}
+
+/* Section Nav */
+.sectionNav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sectionBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-primary);
+  transition: all var(--transition-fast);
+  color: var(--color-text-secondary);
+}
+.sectionBtn:hover {
+  background: var(--color-bg-input);
+}
+.sectionBtnActive {
+  background: var(--color-bg-card);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+.sectionBtnContent {
+  flex: 1;
+  min-width: 0;
+}
+.sectionTitle {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sectionMeta {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.sectionProgress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+.miniProgress {
+  width: 40px;
+  height: 4px;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.miniProgressFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+/* Questions Panel */
+.questionsPanel {
+  min-height: 400px;
+}
+.sectionHeader {
+  margin-bottom: var(--space-lg);
+}
+.sectionHeader h2 { font-size: 1.3rem; margin-bottom: 4px; }
+.griTags {
+  display: flex;
+  gap: 6px;
+  margin-top: var(--space-sm);
+}
+
+.questionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.questionCard {
+  padding: var(--space-lg);
+}
+.questionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.questionNum {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-lightest);
+  color: var(--color-primary);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.questionLabel {
+  font-weight: 600;
+  font-size: 0.92rem;
+  flex: 1;
+}
+.questionHint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+  padding-left: 36px;
+}
+
+.questionInput {
+  padding-left: 36px;
+}
+.numberInput {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: 300px;
+}
+.numberInput .form-input { flex: 1; }
+.unitLabel {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.yesNoGroup {
+  display: flex;
+  gap: var(--space-sm);
+}
+.yesNoBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+.yesNoBtn:hover {
+  border-color: var(--color-primary-lighter);
+}
+.yesNoBtnActive {
+  border-color: var(--color-success);
+  background: #F0FDF4;
+  color: #15803D;
+}
+.yesNoBtnActiveNo {
+  border-color: var(--color-danger);
+  background: #FEF2F2;
+  color: #991B1B;
+}
+
+@media (max-width: 768px) {
+  .assessmentBody { grid-template-columns: 1fr; }
+  .sectionNav { flex-direction: row; overflow-x: auto; gap: 0; }
+  .sectionBtn { min-width: max-content; }
+  .pillarTabs { flex-direction: column; }
+  .assessmentHeader { flex-direction: column; gap: var(--space-md); align-items: flex-start; }
+  .questionInput { padding-left: 0; }
+  .questionHint { padding-left: 0; }
+}

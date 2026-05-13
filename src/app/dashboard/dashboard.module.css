@@ -1,0 +1,179 @@
+.dashboard {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+.welcome h1 { font-size: 1.6rem; }
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.statCard {
+  position: relative;
+  overflow: hidden;
+}
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+.statEnv::before { background: var(--color-env); }
+.statSoc::before { background: var(--color-soc); }
+.statGov::before { background: var(--color-gov); }
+.statOverall::before { background: linear-gradient(90deg, var(--color-env), var(--color-soc), var(--color-gov)); }
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+}
+.statEnv .statIcon { background: var(--color-env-bg); color: var(--color-env); }
+.statSoc .statIcon { background: var(--color-soc-bg); color: var(--color-soc); }
+.statGov .statIcon { background: var(--color-gov-bg); color: var(--color-gov); }
+.statOverall .statIcon { background: var(--color-primary-lightest); color: var(--color-primary); }
+
+.statLabel {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+.statValue {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+.statHint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* Progress Card */
+.progressCard { margin-bottom: var(--space-xl); }
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.continueLink {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Section Title */
+.sectionTitle {
+  font-size: 1.15rem;
+  margin-bottom: var(--space-md);
+}
+
+/* Actions Grid */
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.actionCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+.actionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.actionIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.actionCard h3 {
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.actionCard p {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+.actionArrow {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+.actionCard:hover .actionArrow {
+  transform: translateX(4px);
+  color: var(--color-primary);
+}
+
+/* Sector Info */
+.sectorInfo { margin-bottom: var(--space-xl); }
+.sectorDetails {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-xl);
+}
+.sectorLabel {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: var(--space-sm);
+}
+.griTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sectorWeights { }
+.weightBars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.weightBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.weightBar .progress-bar { flex: 1; }
+
+@media (max-width: 1024px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .actionsGrid { grid-template-columns: repeat(2, 1fr); }
+  .sectorDetails { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .statsGrid { grid-template-columns: 1fr; }
+  .actionsGrid { grid-template-columns: 1fr; }
+  .welcome { flex-direction: column; align-items: flex-start; gap: var(--space-md); }
+}

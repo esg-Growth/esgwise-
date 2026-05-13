@@ -1,0 +1,161 @@
+.roadmapPage {
+  animation: fadeIn 0.4s ease forwards;
+  height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+}
+
+.progressCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  min-width: 250px;
+}
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+  gap: var(--space-md);
+}
+
+/* Kanban Board */
+.kanbanBoard {
+  display: flex;
+  gap: var(--space-lg);
+  flex: 1;
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+}
+
+.kanbanColumn {
+  flex: 1;
+  min-width: 300px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.columnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.columnHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.itemCount {
+  background: var(--color-bg-input);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.columnBody {
+  padding: var(--space-md);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.taskCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top-width: 3px;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.taskCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.taskPillar {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.taskCard h4 {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.taskCard p {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-bottom: var(--space-md);
+}
+
+.taskMeta {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+.metaBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  background: var(--color-bg);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+}
+
+.taskActions {
+  display: flex;
+  gap: var(--space-sm);
+  border-top: 1px solid var(--color-bg);
+  padding-top: var(--space-md);
+}
+
+@media (max-width: 768px) {
+  .roadmapPage { height: auto; }
+  .header { flex-direction: column; align-items: stretch; gap: var(--space-md); }
+  .kanbanBoard { flex-direction: column; }
+  .kanbanColumn { min-width: 0; }
+}

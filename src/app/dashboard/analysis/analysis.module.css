@@ -1,0 +1,122 @@
+.analysis { animation: fadeIn 0.5s ease forwards; }
+.analysis > h1 { font-size: 1.5rem; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  min-height: 50vh;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.empty h2 { color: var(--color-text); }
+
+.scoreOverview {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+.mainScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl);
+  text-align: center;
+}
+.scoreGauge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-md);
+}
+.gaugeCenter {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+}
+.gaugeValue { font-size: 3rem; font-weight: 900; color: var(--color-primary); }
+.gaugeLabel { font-size: 1rem; color: var(--color-text-muted); }
+.ratingBadge {
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 6px 24px;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-sm);
+}
+.completeness { font-size: 0.82rem; color: var(--color-text-muted); }
+
+.pillarCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.pillarCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+}
+.pillarIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pillarLabel { font-size: 0.9rem; font-weight: 600; flex: 1; }
+.pillarValue { font-size: 1.5rem; font-weight: 800; min-width: 48px; text-align: right; }
+.pillarCard .progress-bar { width: 100px; flex-shrink: 0; }
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+.chartCard { padding: var(--space-lg); }
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.insightCard { padding: var(--space-lg); }
+.insightCard .card-title { display: flex; align-items: center; gap: 8px; margin-bottom: var(--space-md); }
+.insightList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.insightList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+.insightList li svg { flex-shrink: 0; margin-top: 2px; color: var(--color-text-muted); }
+
+.ctaBar {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .scoreOverview { grid-template-columns: 1fr; }
+  .pillarCards { flex-direction: row; }
+  .chartsGrid { grid-template-columns: 1fr; }
+  .insightsGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pillarCards { flex-direction: column; }
+  .ctaBar { flex-direction: column; }
+}
