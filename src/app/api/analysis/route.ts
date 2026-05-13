@@ -23,7 +23,9 @@ export async function GET() {
 
     const score = calculateEsgScore(responses, company?.sector || 'other');
 
-    return NextResponse.json({ company, assessment, score });
+    const certificate = db.prepare('SELECT * FROM certificates WHERE assessment_id = ?').get(assessment.id) as any;
+
+    return NextResponse.json({ company, assessment, score, certificate });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

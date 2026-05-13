@@ -216,4 +216,14 @@ function initializeSchema(db: Database.Database) {
   `);
 }
 
+export async function getCertificateByCode(code: string) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT c.*, co.name as company_name 
+    FROM certificates c
+    JOIN companies co ON c.company_id = co.id
+    WHERE c.verification_code = ?
+  `).get(code) as any;
+}
+
 export default getDb;

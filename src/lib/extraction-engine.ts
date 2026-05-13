@@ -241,7 +241,9 @@ export async function parseFileContent(buffer: Buffer, mimeType: string, filenam
   // PDF
   if (mimeType === 'application/pdf' || filename.endsWith('.pdf')) {
     try {
-      const pdfParse = (await import('pdf-parse')).default;
+      const pdfModule = await import('pdf-parse');
+      // @ts-ignore
+      const pdfParse = pdfModule.default || pdfModule;
       const data = await pdfParse(buffer);
       return data.text.slice(0, 15000); // Limit for API
     } catch (e) {

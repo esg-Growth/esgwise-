@@ -5,16 +5,18 @@ import { useI18n } from '@/lib/i18n';
 import { ScoreBreakdown } from '@/lib/esg-scoring';
 import { getRatingColor } from '@/lib/gri-standards';
 import { ASSESSMENT_SECTIONS } from '@/lib/questionnaire';
-import { TrendingUp, Leaf, Users, Shield, AlertTriangle, CheckCircle, Target, ArrowRight } from 'lucide-react';
+import { TrendingUp, Leaf, Users, Shield, AlertTriangle, CheckCircle, Target, ArrowRight, Award } from 'lucide-react';
 import Link from 'next/link';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import { issueCertificate } from '../assessment/actions';
 import styles from './analysis.module.css';
 
 export default function AnalysisPage() {
   const { locale } = useI18n();
   const isAr = locale === 'ar';
 
-  const [data, setData] = useState<{ score: ScoreBreakdown; company: any; assessment: any } | null>(null);
+  const [data, setData] = useState<{ score: ScoreBreakdown; company: any; assessment: any; certificate?: any } | null>(null);
+  const [issuing, setIssuing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -164,6 +166,30 @@ export default function AnalysisPage() {
       <div className={styles.ctaBar}>
         <Link href="/dashboard/gaps" className="btn btn-secondary"><Target size={16} /> {isAr ? 'تحليل الفجوات المفصل' : 'Detailed Gap Analysis'}</Link>
         <Link href="/dashboard/roadmap" className="btn btn-primary"><TrendingUp size={16} /> {isAr ? 'اعرض خارطة الطريق' : 'View Improvement Roadmap'}</Link>
+        
+        {data.certificate ? (
+          <Link href={`/verify/${data.certificate.verification_code}`} target="_blank" className="btn btn-success">
+            <Award size={16} /> {isAr ? 'عرض الشهادة العامة' : 'View Public Certificate'}
+          </Link>
+        ) : (
+          <button 
+            className="btn btn-success" 
+            onClick={async () => {
+              setIssuing(true);
+              const res = await issueCertificate(data.assessment.id);
+              if (res.success) {
+                // Refresh data to show the certificate
+                const freshRes = await fetch('/api/analysis');
+                setData(await freshRes.json());
+              }
+              setIssuing(false);
+            }}
+            disabled={issuing}
+          >
+            {issuing ? <div className="spinner" /> : <Award size={16} />}
+            {isAr ? 'إصدار شهادة ESG عامة' : 'Issue Public ESG Certificate'}
+          </button>
+        )}
       </div>
     </div>
   );

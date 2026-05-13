@@ -151,21 +151,21 @@ export default function ReportsPage() {
                 <div className={styles.ratingBadge} data-rating={score.rating}>
                   {score.rating}
                 </div>
-                <div className={styles.scoreNumber}>{Math.round(score.overallScore)} / 100</div>
+                <div className={styles.scoreNumber}>{Math.round(score.overall)} / 100</div>
               </div>
               
               <div className={styles.pillarScores}>
                 <div className={styles.pillarScore} style={{ '--pillar-color': 'var(--color-env)' } as any}>
                   <span>{isAr ? 'البيئة' : 'Environmental'}</span>
-                  <strong>{Math.round(score.pillarScores.E)}%</strong>
+                  <strong>{Math.round(score.env)}%</strong>
                 </div>
                 <div className={styles.pillarScore} style={{ '--pillar-color': 'var(--color-soc)' } as any}>
                   <span>{isAr ? 'المجتمع' : 'Social'}</span>
-                  <strong>{Math.round(score.pillarScores.S)}%</strong>
+                  <strong>{Math.round(score.soc)}%</strong>
                 </div>
                 <div className={styles.pillarScore} style={{ '--pillar-color': 'var(--color-gov)' } as any}>
                   <span>{isAr ? 'الحوكمة' : 'Governance'}</span>
-                  <strong>{Math.round(score.pillarScores.G)}%</strong>
+                  <strong>{Math.round(score.gov)}%</strong>
                 </div>
               </div>
             </div>
