@@ -114,6 +114,35 @@
 }
 .trustIcon { color: var(--color-success); }
 
+/* Trusted By */
+.trustedBy {
+  padding: var(--space-xl) var(--space-lg);
+  background: var(--color-bg-subtle);
+  text-align: center;
+}
+.trustedBy p {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-lg);
+}
+.logoStrip {
+  max-width: 1000px;
+  margin: 0 auto;
+  opacity: 0.7;
+}
+.logoStrip img {
+  max-width: 1000px;
+  width: 100%;
+  height: auto;
+  filter: grayscale(1);
+}
+[data-theme="dark"] .logoStrip img {
+  filter: grayscale(1) invert(1);
+}
+
 /* Score Visual */
 .heroVisual {
   flex-shrink: 0;
@@ -353,6 +382,42 @@
 .step h3 { font-size: 1rem; margin-bottom: 6px; }
 .step p { font-size: 0.85rem; color: var(--color-text-secondary); }
 
+/* Samples Section */
+.samples {
+  padding: var(--space-3xl) var(--space-lg);
+  background: var(--color-bg-subtle);
+}
+.samplesGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3xl);
+  align-items: center;
+}
+.samplesContent {
+  animation: fadeIn 0.8s ease forwards;
+}
+.sampleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sampleImg {
+  width: 100%;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2xl);
+  transition: transform 0.5s ease;
+}
+.sampleImg:hover {
+  transform: scale(1.02);
+}
+@media (max-width: 1024px) {
+  .samplesGrid { grid-template-columns: 1fr; text-align: center; }
+  .samplesContent { order: 2; }
+  .samplesVisual { order: 1; }
+}
+
 /* CTA */
 .cta {
   padding: var(--space-3xl) var(--space-lg);
@@ -394,7 +459,15 @@
   font-weight: 700;
   color: var(--color-primary);
 }
-.footerLinks { font-size: 0.8rem; color: var(--color-text-muted); }
+.footerLinks { 
+  font-size: 0.8rem; 
+  color: var(--color-text-muted); 
+  display: flex;
+  gap: var(--space-md);
+}
+.footerLinks a:hover {
+  color: var(--color-primary);
+}
 .footerCopy { font-size: 0.8rem; color: var(--color-text-muted); }
 
 /* Responsive */

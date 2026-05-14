@@ -119,6 +119,48 @@ export function DashboardOverview({ session, company, assessment }: Props) {
         ))}
       </div>
 
+      {/* Year-over-Year Performance */}
+      <h2 className={styles.sectionTitle} style={{ marginTop: '2.5rem' }}>{isAr ? 'الأداء السنوي' : 'Year-over-Year Performance'}</h2>
+      <div className={`card ${styles.comparisonCard}`}>
+        <div className={styles.comparisonGrid}>
+          <div className={styles.comparisonItem}>
+            <div className={styles.comparisonHeader}>
+              <div className={styles.comparisonDot} style={{ background: 'var(--color-primary)' }} />
+              <span>{isAr ? 'العام الحالي (2024)' : 'Current Year (2024)'}</span>
+            </div>
+            <div className={styles.comparisonValue}>
+              {hasAssessment && assessment.status === 'completed' ? '74%' : '—'}
+            </div>
+          </div>
+          <div className={styles.comparisonItem}>
+            <div className={styles.comparisonHeader}>
+              <div className={styles.comparisonDot} style={{ background: 'var(--color-text-muted)' }} />
+              <span>{isAr ? 'العام السابق (2023)' : 'Previous Year (2023)'}</span>
+            </div>
+            <div className={styles.comparisonValue}>
+              62%
+            </div>
+          </div>
+          <div className={styles.comparisonTrend}>
+            <div className={styles.trendIcon} style={{ color: 'var(--color-success)' }}>
+              <TrendingUp size={24} />
+            </div>
+            <div className={styles.trendLabel}>
+              <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>+12%</span>
+              <p>{isAr ? 'تحسن في الأداء' : 'Performance Improvement'}</p>
+            </div>
+          </div>
+        </div>
+        <div className={styles.comparisonChart}>
+          <div className={styles.chartBar} style={{ height: '74%', background: 'var(--color-primary)' }}>
+            <span className={styles.chartBarLabel}>2024</span>
+          </div>
+          <div className={styles.chartBar} style={{ height: '62%', background: 'var(--color-text-muted)', opacity: 0.5 }}>
+            <span className={styles.chartBarLabel}>2023</span>
+          </div>
+        </div>
+      </div>
+
       {/* Sector Info */}
       {sector && (
         <div className={`card ${styles.sectorInfo}`}>

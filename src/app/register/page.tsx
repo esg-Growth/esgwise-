@@ -26,6 +26,7 @@ export default function RegisterPage() {
   const [country, setCountry] = useState('Jordan');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -186,9 +187,22 @@ export default function RegisterPage() {
                 ))}
               </div>
 
+              <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                <label className={styles.checkboxLabel} style={{ display: 'flex', gap: '0.75rem', cursor: 'pointer', fontSize: '0.875rem', color: '#4b5563' }}>
+                  <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} style={{ width: '1.25rem', height: '1.25rem', marginTop: '0.125rem' }} />
+                  <span>
+                    {isAr ? (
+                      <>أوافق على <Link href="/terms" className="link">شروط الخدمة</Link> و <Link href="/privacy" className="link">سياسة الخصوصية</Link></>
+                    ) : (
+                      <>I agree to the <Link href="/terms" className="link">Terms of Service</Link> and <Link href="/privacy" className="link">Privacy Policy</Link></>
+                    )}
+                  </span>
+                </label>
+              </div>
+
               <div className="flex gap-sm">
                 <button className="btn btn-secondary btn-lg" onClick={() => setStep(2)} style={{ flex: '0 0 auto' }}>{t('common.back')}</button>
-                <button className="btn btn-primary btn-full btn-lg" onClick={() => { if (sector) handleSubmit(); else setError(isAr ? 'يرجى اختيار قطاع' : 'Please select a sector'); }} disabled={loading}>
+                <button className="btn btn-primary btn-full btn-lg" onClick={() => { if (sector && agreedToTerms) handleSubmit(); else if (!agreedToTerms) setError(isAr ? 'يجب الموافقة على الشروط والخصوصية' : 'You must agree to the Terms and Privacy Policy'); else setError(isAr ? 'يرجى اختيار قطاع' : 'Please select a sector'); }} disabled={loading}>
                   {loading ? <span className="spinner" /> : (isAr ? 'إنشاء الحساب' : 'Create Account')}
                 </button>
               </div>

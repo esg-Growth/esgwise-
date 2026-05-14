@@ -16,11 +16,16 @@ export async function GET() {
 
     const score = calculateEsgScore(assessment.responses, assessment.sector_id || 'other');
 
-    // For now, certificates are looked up by a special code or we can add getCertificateByAssessment
-    const db = (await import('@/lib/db')).default();
     let certificate = null;
-    if (db) {
-       certificate = db.prepare('SELECT * FROM certificates WHERE assessment_id = ?').get(assessment.id);
+    try {
+      const { getFirestore } = await import('firebase-admin/firestore');
+      const firestore = getFirestore();
+      const certSnap = await firestore.collection('certificates').where('assessment_id', '==', assessment.id).limit(1).get();
+      if (!certSnap.empty) {
+        certificate = { id: certSnap.docs[0].id, ...certSnap.docs[0].data() };
+      }
+    } catch (e) {
+      console.error('Error fetching certificate:', e);
     }
 
     return NextResponse.json({ 

@@ -19,6 +19,7 @@ export const saveAssessment = db.saveAssessment;
 export const createDocument = db.createDocument;
 export const updateDocumentExtraction = db.updateDocumentExtraction;
 export const getDocuments = db.getDocuments;
+export const getDocumentById = (db as any).getDocumentById;
 export const saveChatMessage = db.saveChatMessage;
 export const getChatHistory = db.getChatHistory;
 export const issueCertificate = db.issueCertificate;

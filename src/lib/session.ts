@@ -7,6 +7,7 @@ export interface Session {
   name: string;
   role: string;
   isAdmin?: boolean;
+  isDemo?: boolean;
 }
 
 export async function getSession(): Promise<Session | null> {

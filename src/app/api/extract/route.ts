@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { v4 as uuid } from 'uuid';
 import fs from 'fs';
+import { getDocumentById, updateDocumentExtraction } from '@/lib/db';
+import { getFirestore } from 'firebase-admin/firestore';
+import { v4 as uuid } from 'uuid';
 
 export async function POST(req: Request) {
   try {
@@ -12,14 +14,12 @@ export async function POST(req: Request) {
     const { documentId } = await req.json();
     if (!documentId) return NextResponse.json({ error: 'documentId is required' }, { status: 400 });
 
-    const getDb = (await import('@/lib/db')).default;
-    const db = getDb();
-
-    const doc = db.prepare('SELECT * FROM uploaded_documents WHERE id = ?').get(documentId) as any;
+    const doc = await getDocumentById(documentId);
     if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 });
 
     // Update status to processing
-    db.prepare("UPDATE uploaded_documents SET status = 'processing' WHERE id = ?").run(documentId);
+    const db = getFirestore();
+    await db.collection('uploaded_documents').doc(documentId).update({ status: 'processing' });
 
     // Parse file content
     const { parseFileContent, extractEsgData } = await import('@/lib/extraction-engine');
@@ -30,17 +30,24 @@ export async function POST(req: Request) {
     const result = await extractEsgData(content, doc.category, documentId, doc.mime_type);
 
     // Save extraction results
-    db.prepare("UPDATE uploaded_documents SET status = 'completed', extraction_result = ?, raw_summary = ?, raw_summary_ar = ?, processed_at = datetime('now') WHERE id = ?")
-      .run(JSON.stringify(result), result.summary, result.summary_ar, documentId);
+    await updateDocumentExtraction(documentId, result);
 
     // Save individual KPI provenance records
-    const stmt = db.prepare(`INSERT INTO kpi_provenance (id, assessment_id, question_id, document_id, extracted_value, confidence, evidence) VALUES (?, ?, ?, ?, ?, ?, ?)`);
-
+    const batch = db.batch();
     for (const kpi of result.extractedKpis) {
       if (kpi.questionId) {
-        stmt.run(uuid(), doc.assessment_id, kpi.questionId, documentId, kpi.value, kpi.confidence, kpi.evidence);
+        const kpiRef = db.collection('kpi_provenance').doc(uuid());
+        batch.set(kpiRef, {
+          assessment_id: doc.assessment_id,
+          question_id: kpi.questionId,
+          document_id: documentId,
+          extracted_value: kpi.value,
+          confidence: kpi.confidence,
+          evidence: kpi.evidence
+        });
       }
     }
+    await batch.commit();
 
     return NextResponse.json({ success: true, result });
   } catch (err: any) {
@@ -50,8 +57,8 @@ export async function POST(req: Request) {
     try {
       const { documentId } = await req.clone().json().catch(() => ({ documentId: null }));
       if (documentId) {
-        const getDb = (await import('@/lib/db')).default;
-        getDb().prepare("UPDATE uploaded_documents SET status = 'failed' WHERE id = ?").run(documentId);
+        const db = getFirestore();
+        await db.collection('uploaded_documents').doc(documentId).update({ status: 'failed' });
       }
     } catch {}
 

@@ -55,6 +55,42 @@ export async function createUser(email: string, passwordHash: string, companyNam
   return { id: res.id, company_id: compRes.id };
 }
 
+export async function updateUserPassword(userId: string, passwordHash: string) {
+  await db.collection('users').doc(userId).update({
+    password_hash: passwordHash,
+    updated_at: new Date().toISOString(),
+  });
+}
+
+export async function saveResetToken(email: string, token: string) {
+  const expires = new Date();
+  expires.setHours(expires.getHours() + 1); // 1 hour expiration
+
+  await db.collection('password_resets').add({
+    email,
+    token,
+    expires_at: expires.toISOString(),
+    created_at: new Date().toISOString(),
+  });
+}
+
+export async function verifyResetToken(token: string) {
+  const snapshot = await db.collection('password_resets')
+    .where('token', '==', token)
+    .orderBy('created_at', 'desc')
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) return null;
+  const data = snapshot.docs[0].data();
+  
+  const now = new Date();
+  const expiresAt = new Date(data.expires_at);
+  
+  if (now > expiresAt) return null;
+  return data.email;
+}
+
 // ─── Assessment Logic ───
 
 export async function getAssessment(userId: string) {
@@ -112,13 +148,15 @@ export async function saveAssessment(userId: string, responses: any, sectorId: s
 
 // ─── Documents Logic ───
 
-export async function createDocument(userId: string, filename: string, mimeType: string, category: string) {
+export async function createDocument(userId: string, filename: string, mimeType: string, category: string, assessmentId: string, filePath: string) {
   const user = await db.collection('users').doc(userId).get();
   const companyId = user.data()?.company_id;
 
   const res = await db.collection('uploaded_documents').add({
     user_id: userId,
     company_id: companyId,
+    assessment_id: assessmentId,
+    file_path: filePath,
     filename,
     original_name: filename,
     mime_type: mimeType,
@@ -127,6 +165,12 @@ export async function createDocument(userId: string, filename: string, mimeType:
     created_at: new Date().toISOString(),
   });
   return { id: res.id };
+}
+
+export async function getDocumentById(docId: string) {
+  const doc = await db.collection('uploaded_documents').doc(docId).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() } as any;
 }
 
 export async function updateDocumentExtraction(documentId: string, result: any) {

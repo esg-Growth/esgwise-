@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { v4 as uuid } from 'uuid';
 import path from 'path';
 import fs from 'fs';
+import { createDocument, getDocuments } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 });
     }
 
-    // Save file
+    // Save file locally (or to cloud storage in a real prod env)
     const uploadDir = path.join(process.cwd(), 'data', 'uploads', session.companyId);
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -37,14 +38,9 @@ export async function POST(req: Request) {
     fs.writeFileSync(filePath, buffer);
 
     // Create DB record
-    const getDb = (await import('@/lib/db')).default;
-    const db = getDb();
-    const docId = uuid();
+    const res = await createDocument(session.userId, filename, file.type, category, assessmentId, filePath);
 
-    db.prepare(`INSERT INTO uploaded_documents (id, assessment_id, company_id, category, filename, original_name, mime_type, file_size, file_path, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(docId, assessmentId, session.companyId, category, filename, file.name, file.type, file.size, filePath, session.userId);
-
-    return NextResponse.json({ success: true, documentId: docId, filename: file.name });
+    return NextResponse.json({ success: true, documentId: res.id, filename: file.name });
   } catch (err: any) {
     console.error('Upload error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -59,10 +55,7 @@ export async function GET(req: Request) {
     if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const session = JSON.parse(raw);
 
-    const getDb = (await import('@/lib/db')).default;
-    const db = getDb();
-
-    const docs = db.prepare('SELECT * FROM uploaded_documents WHERE company_id = ? ORDER BY created_at DESC').all(session.companyId);
+    const docs = await getDocuments(session.userId);
     return NextResponse.json({ documents: docs });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

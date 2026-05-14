@@ -16,10 +16,10 @@ const FEATURES = [
 ];
 
 const STATS = [
+  { value: '500+', label: 'ESG Assessments', label_ar: 'تقييم ESG' },
+  { value: '250+', label: 'SMEs Empowered', label_ar: 'شركة تم تمكينها' },
   { value: '19+', label: 'GRI Standards', label_ar: 'معيار GRI' },
-  { value: '10', label: 'Industry Sectors', label_ar: 'قطاعات صناعية' },
-  { value: '100+', label: 'ESG Indicators', label_ar: 'مؤشر ESG' },
-  { value: '17', label: 'SDG Alignments', label_ar: 'توافق أهداف التنمية' },
+  { value: '17', label: 'SDGs Mapped', label_ar: 'أهداف تنمية مستدامة' },
 ];
 
 const SECTORS_PREVIEW = [
@@ -78,7 +78,7 @@ export default function LandingPage() {
               {t('landing.get_started')}
               <ArrowRight size={20} />
             </Link>
-            <Link href="#features" className="btn btn-secondary btn-lg">{t('landing.learn_more')}</Link>
+            <Link href="/demo" className="btn btn-secondary btn-lg">{isAr ? 'جرب العرض التجريبي' : 'Try Demo'}</Link>
           </div>
           <div className={styles.heroTrust}>
             <CheckCircle size={16} className={styles.trustIcon} />
@@ -102,6 +102,14 @@ export default function LandingPage() {
               <div className={styles.scoreBarRow}><span className={styles.barLabel}>G</span><div className={styles.barTrack}><div className={styles.barFill} style={{ width: '82%', background: 'var(--color-gov)' }} /></div><span className={styles.barVal}>82</span></div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Trusted By */}
+      <section className={styles.trustedBy}>
+        <p>{isAr ? 'موثوق به من قبل الشركات الرائدة' : 'Trusted by forward-thinking companies'}</p>
+        <div className={styles.logoStrip}>
+          <img src="/client_logos_strip_1778770998539.png" alt="Trusted Clients" />
         </div>
       </section>
 
@@ -163,6 +171,32 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Sample Reports */}
+      <section className={styles.samples}>
+        <div className={styles.samplesGrid}>
+          <div className={styles.samplesContent}>
+            <h2 className={styles.sectionTitle} style={{ textAlign: isAr ? 'right' : 'left' }}>{isAr ? 'تقارير احترافية جاهزة للمستثمرين' : 'Professional, Investor-Ready Reports'}</h2>
+            <p className={styles.sectionSubtitle} style={{ textAlign: isAr ? 'right' : 'left', margin: '0 0 2rem 0' }}>
+              {isAr 
+                ? 'احصل على تقارير شاملة تتوافق مع المعايير العالمية بضغطة زر واحدة.' 
+                : 'Generate comprehensive reports aligned with global standards in a single click.'}
+            </p>
+            <ul className={styles.sampleList} style={{ listStyle: 'none', padding: 0 }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}><CheckCircle size={18} color="#10b981" /> {isAr ? 'توافق كامل مع GRI' : 'Full GRI Alignment'}</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}><CheckCircle size={18} color="#10b981" /> {isAr ? 'رؤى تحليلية ذكية' : 'Smart Analytical Insights'}</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}><CheckCircle size={18} color="#10b981" /> {isAr ? 'تتبع التقدم السنوي' : 'Annual Progress Tracking'}</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}><CheckCircle size={18} color="#10b981" /> {isAr ? 'شهادات قابلة للتحقق' : 'Verifiable Certificates'}</li>
+            </ul>
+            <div style={{ marginTop: '2rem' }}>
+              <Link href="/samples" className="btn btn-primary">{isAr ? 'مشاهدة عينات التقارير' : 'View Sample Reports'}</Link>
+            </div>
+          </div>
+          <div className={styles.samplesVisual}>
+            <img src="/sample_esg_report_preview_1778771025327.png" alt="Sample ESG Report" style={{ width: '100%', borderRadius: '1rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className={styles.cta}>
         <div className={styles.ctaContent}>
@@ -183,6 +217,8 @@ export default function LandingPage() {
             <span>ESGwise</span>
           </div>
           <div className={styles.footerLinks}>
+            <Link href="/privacy">{isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link>
+            <Link href="/terms">{isAr ? 'شروط الخدمة' : 'Terms of Service'}</Link>
             <span>{isAr ? 'متوافق مع' : 'Aligned with'}: GRI • IFRS S1/S2 • SDGs • GHG Protocol</span>
           </div>
           <div className={styles.footerCopy}>© 2026 ESGwise. {isAr ? 'جميع الحقوق محفوظة' : 'All rights reserved'}.</div>

@@ -11,18 +11,29 @@ export async function POST(req: Request) {
     const sessionRaw = cookieStore.get('esgwise_session')?.value;
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
-    // Get DB for context
-    const getDb = (await import('@/lib/db')).default;
-    const db = getDb();
-    
     let context = "";
     if (session?.companyId) {
-      const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(session.companyId) as any;
-      const assessment = db.prepare("SELECT * FROM assessments WHERE company_id = ? ORDER BY created_at DESC LIMIT 1").get(session.companyId) as any;
-      
-      context = `The user is from company "${company?.name}" in the "${company?.sector}" sector. `;
-      if (assessment) {
-        context += `They have an active assessment titled "${assessment.title}" with status "${assessment.status}". `;
+      try {
+        const { getFirestore } = await import('firebase-admin/firestore');
+        const firestore = getFirestore();
+        
+        const companyDoc = await firestore.collection('companies').doc(session.companyId).get();
+        const company = companyDoc.exists ? companyDoc.data() : null;
+        
+        const assessmentSnap = await firestore.collection('assessments')
+          .where('company_id', '==', session.companyId)
+          .orderBy('created_at', 'desc')
+          .limit(1)
+          .get();
+        
+        const assessment = !assessmentSnap.empty ? assessmentSnap.docs[0].data() : null;
+        
+        context = `The user is from company "${company?.name || 'Unknown'}" in the "${company?.sector || 'Unknown'}" sector. `;
+        if (assessment) {
+          context += `They have an active assessment titled "${assessment.title}" with status "${assessment.status}". `;
+        }
+      } catch (e) {
+        console.error('Failed to get context from firestore for chat:', e);
       }
     }
 
