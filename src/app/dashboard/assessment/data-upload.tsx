@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { DATA_SOURCES, DataSource, ExtractedKpi } from '@/lib/extraction-engine';
+import { DATA_SOURCES, DataSource } from '@/lib/data-sources';
+import { ExtractedKpi } from '@/lib/extraction-engine';
 import { Upload, FileUp, CheckCircle, AlertTriangle, Clock, X, Sparkles, FileText, Eye, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import styles from './upload.module.css';
 
