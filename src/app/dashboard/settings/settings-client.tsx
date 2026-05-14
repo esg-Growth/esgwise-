@@ -99,17 +99,17 @@ export function SettingsClient({ user, company }: SettingsClientProps) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
                 <div className="form-control">
-                  <label>Full Name</label>
-                  <input type="text" className="input" defaultValue={user.name} disabled />
+                  <label htmlFor="fullName">Full Name</label>
+                  <input id="fullName" type="text" className="input" defaultValue={user.name} disabled />
                   <small style={{ color: 'var(--color-text-muted)', marginTop: '4px' }}>Contact an admin to change your name.</small>
                 </div>
                 <div className="form-control">
-                  <label>Email Address</label>
-                  <input type="email" className="input" defaultValue={user.email} disabled />
+                  <label htmlFor="emailAddress">Email Address</label>
+                  <input id="emailAddress" type="email" className="input" defaultValue={user.email} disabled />
                 </div>
                 <div className="form-control" style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Building size={16} /> Company</label>
-                  <input type="text" className="input" defaultValue={company.name} disabled />
+                  <label htmlFor="companyName" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Building size={16} /> Company</label>
+                  <input id="companyName" type="text" className="input" defaultValue={company.name} disabled />
                 </div>
               </div>
             </div>
