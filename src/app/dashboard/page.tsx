@@ -7,24 +7,10 @@ export default async function DashboardPage() {
   let company = null;
   let assessment = null;
   try {
-    const { getFirestore } = await import('firebase-admin/firestore');
-    const db = getFirestore();
-    
     if (session?.companyId) {
-      const companyDoc = await db.collection('companies').doc(session.companyId).get();
-      if (companyDoc.exists) {
-        company = { id: companyDoc.id, ...companyDoc.data() };
-      }
-
-      const assessmentsSnap = await db.collection('assessments')
-        .where('company_id', '==', session.companyId)
-        .orderBy('created_at', 'desc')
-        .limit(1)
-        .get();
-        
-      if (!assessmentsSnap.empty) {
-        assessment = { id: assessmentsSnap.docs[0].id, ...assessmentsSnap.docs[0].data() };
-      }
+      const { getCompanyById, getAssessmentForCompany } = await import('@/lib/db');
+      company = await getCompanyById(session.companyId);
+      assessment = await getAssessmentForCompany(session.companyId);
     }
   } catch (err) {
     console.error('Error fetching dashboard data:', err);

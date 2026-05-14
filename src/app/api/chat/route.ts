@@ -14,26 +14,17 @@ export async function POST(req: Request) {
     let context = "";
     if (session?.companyId) {
       try {
-        const { getFirestore } = await import('firebase-admin/firestore');
-        const firestore = getFirestore();
+        const { getCompanyById, getAssessmentForCompany } = await import('@/lib/db');
         
-        const companyDoc = await firestore.collection('companies').doc(session.companyId).get();
-        const company = companyDoc.exists ? companyDoc.data() : null;
-        
-        const assessmentSnap = await firestore.collection('assessments')
-          .where('company_id', '==', session.companyId)
-          .orderBy('created_at', 'desc')
-          .limit(1)
-          .get();
-        
-        const assessment = !assessmentSnap.empty ? assessmentSnap.docs[0].data() : null;
+        const company = await getCompanyById(session.companyId);
+        const assessment = await getAssessmentForCompany(session.companyId);
         
         context = `The user is from company "${company?.name || 'Unknown'}" in the "${company?.sector || 'Unknown'}" sector. `;
         if (assessment) {
           context += `They have an active assessment titled "${assessment.title}" with status "${assessment.status}". `;
         }
       } catch (e) {
-        console.error('Failed to get context from firestore for chat:', e);
+        console.error('Failed to get context for chat:', e);
       }
     }
 

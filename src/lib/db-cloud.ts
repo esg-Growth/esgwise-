@@ -50,9 +50,16 @@ export async function createUser(email: string, passwordHash: string, companyNam
     password_hash: passwordHash,
     name: email.split('@')[0],
     company_id: compRes.id,
+    is_active: true,
     created_at: new Date().toISOString(),
   });
   return { id: res.id, company_id: compRes.id };
+}
+
+export async function getCompanyById(companyId: string) {
+  const doc = await db.collection('companies').doc(companyId).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() } as any;
 }
 
 export async function updateUserPassword(userId: string, passwordHash: string) {
@@ -98,6 +105,10 @@ export async function getAssessment(userId: string) {
   const companyId = user.data()?.company_id;
   if (!companyId) return null;
 
+  return getAssessmentForCompany(companyId);
+}
+
+export async function getAssessmentForCompany(companyId: string) {
   const snapshot = await db.collection('assessments')
     .where('company_id', '==', companyId)
     .orderBy('updated_at', 'desc')
@@ -183,6 +194,65 @@ export async function updateDocumentExtraction(documentId: string, result: any) 
   });
 }
 
+export async function updateDocumentStatus(documentId: string, status: string) {
+  await db.collection('uploaded_documents').doc(documentId).update({ status });
+}
+
+export async function saveKpiProvenanceBatch(assessmentId: string, documentId: string, kpis: any[]) {
+  const batch = db.batch();
+  const uuid = require('uuid').v4;
+  for (const kpi of kpis) {
+    if (kpi.questionId) {
+      const kpiRef = db.collection('kpi_provenance').doc(uuid());
+      batch.set(kpiRef, {
+        assessment_id: assessmentId,
+        question_id: kpi.questionId,
+        document_id: documentId,
+        extracted_value: kpi.value,
+        confidence: kpi.confidence,
+        evidence: kpi.evidence,
+        created_at: new Date().toISOString()
+      });
+    }
+  }
+  await batch.commit();
+}
+
+export async function processKpiActions(assessmentId: string, actions: any[], totalQuestions: number) {
+  const assessmentRef = db.collection('assessments').doc(assessmentId);
+  await db.runTransaction(async (t) => {
+    const assessmentDoc = await t.get(assessmentRef);
+    if (!assessmentDoc.exists) throw new Error('Assessment not found');
+    
+    const assessmentData = assessmentDoc.data() || {};
+    const responses = assessmentData.responses || {};
+
+    for (const action of actions) {
+      if (action.action === 'accept' || action.action === 'edit') {
+        const val = action.action === 'edit' ? action.editedValue : action.value;
+        responses[action.questionId] = val;
+
+        if (action.provenanceId) {
+          t.update(db.collection('kpi_provenance').doc(action.provenanceId), { accepted: 1 });
+        }
+      } else if (action.action === 'reject') {
+        if (action.provenanceId) {
+          t.update(db.collection('kpi_provenance').doc(action.provenanceId), { accepted: 2 });
+        }
+      }
+    }
+
+    const answered = Object.values(responses).filter(v => v !== null && v !== '').length;
+    const progress = Math.round((answered / totalQuestions) * 100);
+
+    t.update(assessmentRef, {
+      responses,
+      progress,
+      updated_at: new Date().toISOString()
+    });
+  });
+}
+
 export async function getDocuments(userId: string) {
   const user = await db.collection('users').doc(userId).get();
   const companyId = user.data()?.company_id;
@@ -229,22 +299,43 @@ export async function getChatHistory(userId: string, limitCount = 20) {
 
 // ─── Certificate Logic ───
 
-export async function issueCertificate(userId: string, assessmentId: string, code: string, data: any) {
-  const user = await db.collection('users').doc(userId).get();
-  const companyId = user.data()?.company_id;
+export async function issueCertificate(assessmentId: string) {
+  const assessmentDoc = await db.collection('assessments').doc(assessmentId).get();
+  if (!assessmentDoc.exists) throw new Error('Assessment not found');
+  const assessment = assessmentDoc.data() as any;
 
-  const res = await db.collection('certificates').add({
-    user_id: userId,
-    company_id: companyId,
+  if (!assessment.overall_score) throw new Error('Assessment must be scored before issuing certificate');
+
+  const companyDoc = await db.collection('companies').doc(assessment.company_id).get();
+  const company = companyDoc.exists ? companyDoc.data() : { sector: 'Technology', name: 'Unknown' };
+
+  const crypto = require('crypto');
+  const prefix = 'ESG';
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const verificationCode = `${prefix}-${timestamp}-${random}`;
+
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+  const certRef = await db.collection('certificates').add({
+    company_id: assessment.company_id,
     assessment_id: assessmentId,
-    verification_code: code,
-    score: data.overall,
-    rating: data.rating,
-    sector: data.sector || 'General',
-    issued_at: new Date().toISOString(),
-    is_valid: 1,
+    score: assessment.overall_score,
+    rating: assessment.rating || 'A',
+    sector: assessment.sector_id || company?.sector || 'General',
+    issued_at: issuedAt,
+    expires_at: expiresAt,
+    verification_code: verificationCode,
+    is_valid: 1
   });
-  return { id: res.id };
+
+  await db.collection('assessments').doc(assessmentId).update({
+    status: 'certified',
+    updated_at: new Date().toISOString()
+  });
+
+  return { success: true, certificateId: certRef.id, verificationCode };
 }
 
 export async function getCertificateByCode(code: string) {
@@ -265,4 +356,10 @@ export async function getCertificateByCode(code: string) {
     ...certData,
     company_name: compData?.name || 'ESGwise Partner',
   } as any;
+}
+
+export async function getCertificateForAssessment(assessmentId: string) {
+  const snap = await db.collection('certificates').where('assessment_id', '==', assessmentId).limit(1).get();
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as any;
 }

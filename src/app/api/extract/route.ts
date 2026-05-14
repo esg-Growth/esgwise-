@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import fs from 'fs';
-import { getDocumentById, updateDocumentExtraction } from '@/lib/db';
-import { getFirestore } from 'firebase-admin/firestore';
-import { v4 as uuid } from 'uuid';
+import { getDocumentById, updateDocumentExtraction, updateDocumentStatus, saveKpiProvenanceBatch } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +16,7 @@ export async function POST(req: Request) {
     if (!doc) return NextResponse.json({ error: 'Document not found' }, { status: 404 });
 
     // Update status to processing
-    const db = getFirestore();
-    await db.collection('uploaded_documents').doc(documentId).update({ status: 'processing' });
+    await updateDocumentStatus(documentId, 'processing');
 
     // Parse file content
     const { parseFileContent, extractEsgData } = await import('@/lib/extraction-engine');
@@ -33,21 +30,7 @@ export async function POST(req: Request) {
     await updateDocumentExtraction(documentId, result);
 
     // Save individual KPI provenance records
-    const batch = db.batch();
-    for (const kpi of result.extractedKpis) {
-      if (kpi.questionId) {
-        const kpiRef = db.collection('kpi_provenance').doc(uuid());
-        batch.set(kpiRef, {
-          assessment_id: doc.assessment_id,
-          question_id: kpi.questionId,
-          document_id: documentId,
-          extracted_value: kpi.value,
-          confidence: kpi.confidence,
-          evidence: kpi.evidence
-        });
-      }
-    }
-    await batch.commit();
+    await saveKpiProvenanceBatch(doc.assessment_id, documentId, result.extractedKpis || []);
 
     return NextResponse.json({ success: true, result });
   } catch (err: any) {
@@ -57,8 +40,7 @@ export async function POST(req: Request) {
     try {
       const { documentId } = await req.clone().json().catch(() => ({ documentId: null }));
       if (documentId) {
-        const db = getFirestore();
-        await db.collection('uploaded_documents').doc(documentId).update({ status: 'failed' });
+        await updateDocumentStatus(documentId, 'failed');
       }
     } catch {}
 

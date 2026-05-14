@@ -234,9 +234,14 @@ export async function createUser(email: string, passwordHash: string, companyNam
   const companyId = require('uuid').v4();
   
   db.prepare('INSERT INTO companies (id, name, sector) VALUES (?, ?, ?)').run(companyId, companyName, 'Technology');
-  db.prepare('INSERT INTO users (id, email, password_hash, name, role, company_id) VALUES (?, ?, ?, ?, ?, ?)').run(userId, email, passwordHash, email.split('@')[0], 'owner', companyId);
+  db.prepare('INSERT INTO users (id, email, password_hash, name, role, company_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)').run(userId, email, passwordHash, email.split('@')[0], 'owner', companyId, 1);
   
   return { id: userId, company_id: companyId };
+}
+
+export async function getCompanyById(companyId: string) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM companies WHERE id = ?').get(companyId) as any;
 }
 
 export async function getAssessment(userId: string) {
@@ -244,7 +249,12 @@ export async function getAssessment(userId: string) {
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
   if (!user?.company_id) return null;
   
-  const assessment = db.prepare('SELECT * FROM assessments WHERE company_id = ? ORDER BY updated_at DESC LIMIT 1').get(user.company_id) as any;
+  return getAssessmentForCompany(user.company_id);
+}
+
+export async function getAssessmentForCompany(companyId: string) {
+  const db = getDb();
+  const assessment = db.prepare('SELECT * FROM assessments WHERE company_id = ? ORDER BY updated_at DESC LIMIT 1').get(companyId) as any;
   if (!assessment) return null;
   
   // Also get responses
@@ -303,6 +313,59 @@ export async function updateDocumentExtraction(documentId: string, result: any) 
     .run(JSON.stringify(result), result.summary, result.summary_ar, 'processed', new Date().toISOString(), documentId);
 }
 
+export async function updateDocumentStatus(documentId: string, status: string) {
+  const db = getDb();
+  db.prepare('UPDATE uploaded_documents SET status = ? WHERE id = ?').run(status, documentId);
+}
+
+export async function saveKpiProvenanceBatch(assessmentId: string, documentId: string, kpis: any[]) {
+  const db = getDb();
+  const insert = db.prepare('INSERT INTO kpi_provenance (id, assessment_id, question_id, document_id, extracted_value, confidence, evidence) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const uuid = require('uuid').v4;
+  
+  db.transaction(() => {
+    for (const kpi of kpis) {
+      if (kpi.questionId) {
+        insert.run(uuid(), assessmentId, kpi.questionId, documentId, kpi.value, kpi.confidence, kpi.evidence);
+      }
+    }
+  })();
+}
+
+export async function processKpiActions(assessmentId: string, actions: any[], totalQuestions: number) {
+  const db = getDb();
+  const updateProvenance = db.prepare('UPDATE kpi_provenance SET accepted = ? WHERE id = ?');
+  const insertResponse = db.prepare('INSERT INTO assessment_responses (id, assessment_id, question_id, section, pillar, value) VALUES (?, ?, ?, ?, ?, ?)');
+  const updateResponse = db.prepare('UPDATE assessment_responses SET value = ?, updated_at = ? WHERE assessment_id = ? AND question_id = ?');
+  const checkResponse = db.prepare('SELECT id FROM assessment_responses WHERE assessment_id = ? AND question_id = ?');
+  const uuid = require('uuid').v4;
+
+  db.transaction(() => {
+    for (const action of actions) {
+      if (action.action === 'accept' || action.action === 'edit') {
+         const val = action.action === 'edit' ? action.editedValue : action.value;
+         const existing = checkResponse.get(assessmentId, action.questionId);
+         if (existing) {
+            updateResponse.run(String(val), new Date().toISOString(), assessmentId, action.questionId);
+         } else {
+            insertResponse.run(uuid(), assessmentId, action.questionId, 'unknown', 'unknown', String(val));
+         }
+         if (action.provenanceId) {
+            updateProvenance.run(1, action.provenanceId);
+         }
+      } else if (action.action === 'reject') {
+         if (action.provenanceId) {
+            updateProvenance.run(2, action.provenanceId);
+         }
+      }
+    }
+
+    const responses = db.prepare('SELECT COUNT(*) as count FROM assessment_responses WHERE assessment_id = ?').get(assessmentId) as any;
+    const progress = Math.round((responses.count / totalQuestions) * 100);
+    db.prepare('UPDATE assessments SET progress = ?, updated_at = ? WHERE id = ?').run(progress, new Date().toISOString(), assessmentId);
+  })();
+}
+
 export async function getDocuments(userId: string) {
   const db = getDb();
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
@@ -326,17 +389,38 @@ export async function getChatHistory(userId: string, limitCount = 20) {
   return db.prepare('SELECT role, content FROM chat_messages WHERE user_id = ? ORDER BY created_at ASC LIMIT ?').all(userId, limitCount) as any[];
 }
 
-export async function issueCertificate(userId: string, assessmentId: string, code: string, data: any) {
+export async function issueCertificate(assessmentId: string) {
   const db = getDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
+  
+  const assessment = db.prepare('SELECT * FROM assessments WHERE id = ?').get(assessmentId) as any;
+  if (!assessment) throw new Error('Assessment not found');
+  
+  const score = db.prepare('SELECT overall_score, rating FROM esg_scores WHERE assessment_id = ?').get(assessmentId) as any;
+  if (!score || !score.overall_score) throw new Error('Assessment must be scored before issuing certificate');
+
+  const company = db.prepare('SELECT sector FROM companies WHERE id = ?').get(assessment.company_id) as any;
+  
+  const crypto = require('crypto');
+  const prefix = 'ESG';
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const verificationCode = `${prefix}-${timestamp}-${random}`;
+
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const id = require('uuid').v4();
-  
-  db.prepare(`
-    INSERT INTO certificates (id, company_id, assessment_id, score, rating, sector, verification_code)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, user.company_id, assessmentId, data.overall, data.rating, data.sector || 'General', code);
-  
-  return { id };
+
+  db.transaction(() => {
+    db.prepare(`
+      INSERT INTO certificates (id, company_id, assessment_id, score, rating, sector, issued_at, expires_at, verification_code, is_valid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, assessment.company_id, assessmentId, score.overall_score, score.rating || 'A', company?.sector || 'General', issuedAt, expiresAt, verificationCode, 1);
+    
+    db.prepare('UPDATE assessments SET status = ?, updated_at = ? WHERE id = ?')
+      .run('certified', new Date().toISOString(), assessmentId);
+  })();
+
+  return { success: true, certificateId: id, verificationCode };
 }
 
 export async function getCertificateByCode(code: string) {
@@ -347,6 +431,11 @@ export async function getCertificateByCode(code: string) {
     JOIN companies co ON c.company_id = co.id
     WHERE c.verification_code = ?
   `).get(code) as any;
+}
+
+export async function getCertificateForAssessment(assessmentId: string) {
+  const db = getDb();
+  return db.prepare('SELECT * FROM certificates WHERE assessment_id = ? LIMIT 1').get(assessmentId) as any;
 }
 
 export default getDb;

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    if (!user.is_active) {
+    if (user.is_active === 0 || user.is_active === false) {
       return NextResponse.json({ error: 'Account is disabled' }, { status: 403 });
     }
 

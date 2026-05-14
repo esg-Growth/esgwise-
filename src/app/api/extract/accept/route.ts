@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getFirestore } from 'firebase-admin/firestore';
+import { processKpiActions } from '@/lib/db';
 import { ASSESSMENT_SECTIONS } from '@/lib/questionnaire';
 
 export async function POST(req: Request) {
@@ -16,42 +16,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'assessmentId and actions are required' }, { status: 400 });
     }
 
-    const db = getFirestore();
-    const assessmentRef = db.collection('assessments').doc(assessmentId);
-    
-    await db.runTransaction(async (t) => {
-      const assessmentDoc = await t.get(assessmentRef);
-      if (!assessmentDoc.exists) throw new Error('Assessment not found');
-      
-      const assessmentData = assessmentDoc.data() || {};
-      const responses = assessmentData.responses || {};
+    const totalQuestions = ASSESSMENT_SECTIONS.reduce((sum, s) => sum + s.questions.length, 0);
 
-      for (const action of actions) {
-        if (action.action === 'accept' || action.action === 'edit') {
-          const val = action.action === 'edit' ? action.editedValue : action.value;
-          responses[action.questionId] = val;
-
-          if (action.provenanceId) {
-            t.update(db.collection('kpi_provenance').doc(action.provenanceId), { accepted: 1 });
-          }
-        } else if (action.action === 'reject') {
-          if (action.provenanceId) {
-            t.update(db.collection('kpi_provenance').doc(action.provenanceId), { accepted: 2 });
-          }
-        }
-      }
-
-      // Recalculate progress
-      const totalQuestions = ASSESSMENT_SECTIONS.reduce((sum, s) => sum + s.questions.length, 0);
-      const answered = Object.values(responses).filter(v => v !== null && v !== '').length;
-      const progress = Math.round((answered / totalQuestions) * 100);
-
-      t.update(assessmentRef, {
-        responses,
-        progress,
-        updated_at: new Date().toISOString()
-      });
-    });
+    await processKpiActions(assessmentId, actions, totalQuestions);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

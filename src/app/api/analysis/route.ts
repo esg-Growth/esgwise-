@@ -18,12 +18,8 @@ export async function GET() {
 
     let certificate = null;
     try {
-      const { getFirestore } = await import('firebase-admin/firestore');
-      const firestore = getFirestore();
-      const certSnap = await firestore.collection('certificates').where('assessment_id', '==', assessment.id).limit(1).get();
-      if (!certSnap.empty) {
-        certificate = { id: certSnap.docs[0].id, ...certSnap.docs[0].data() };
-      }
+      const { getCertificateForAssessment } = await import('@/lib/db');
+      certificate = await getCertificateForAssessment(assessment.id);
     } catch (e) {
       console.error('Error fetching certificate:', e);
     }
