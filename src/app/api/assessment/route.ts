@@ -32,9 +32,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ assessment, responses: assessment.responses });
     }
 
+    if (action === 'create') {
+      const res = await saveAssessment(session.userId, {}, 'General');
+      return NextResponse.json({ success: true, assessmentId: res.id });
+    }
+
     if (action === 'complete') {
-       // Cloud implementation can handle completion inside saveAssessment or a separate function
-       // For now just return success as saveAssessment updates status implicitly if needed
        return NextResponse.json({ success: true });
     }
 
