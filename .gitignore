@@ -42,3 +42,9 @@ next-env.d.ts
 
 # local data
 data/
+
+# firebase
+.firebase/
+firebase-debug.log*
+firestore.indexes.json
+firestore.rules

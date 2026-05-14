@@ -8,11 +8,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const getDb = (await import('@/lib/db')).default;
+    const { getUserByEmail } = await import('@/lib/db');
     const bcrypt = await import('bcryptjs');
-    const db = getDb();
 
-    const user = db.prepare('SELECT u.*, c.name as company_name, c.sector FROM users u LEFT JOIN companies c ON u.company_id = c.id WHERE u.email = ?').get(email) as any;
+    const user = await getUserByEmail(email);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
@@ -27,8 +26,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Account is disabled' }, { status: 403 });
     }
 
-    // Update last login
-    db.prepare('UPDATE users SET last_login = datetime(\'now\') WHERE id = ?').run(user.id);
 
     const response = NextResponse.json({ success: true, userId: user.id });
     response.cookies.set('esgwise_session', JSON.stringify({

@@ -8,24 +8,27 @@ export async function GET() {
     if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     const session = JSON.parse(raw);
 
-    const getDb = (await import('@/lib/db')).default;
+    const { getAssessment, getCertificateByCode } = await import('@/lib/db');
     const { calculateEsgScore } = await import('@/lib/esg-scoring');
-    const db = getDb();
 
-    const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(session.companyId) as any;
-    const assessment = db.prepare("SELECT * FROM assessments WHERE company_id = ? ORDER BY created_at DESC LIMIT 1").get(session.companyId) as any;
-
+    const assessment = await getAssessment(session.userId);
     if (!assessment) return NextResponse.json({ error: 'No assessment found' }, { status: 404 });
 
-    const rows = db.prepare('SELECT question_id, value FROM assessment_responses WHERE assessment_id = ?').all(assessment.id) as any[];
-    const responses: Record<string, string> = {};
-    rows.forEach((r: any) => { responses[r.question_id] = r.value; });
+    const score = calculateEsgScore(assessment.responses, assessment.sector_id || 'other');
 
-    const score = calculateEsgScore(responses, company?.sector || 'other');
+    // For now, certificates are looked up by a special code or we can add getCertificateByAssessment
+    const db = (await import('@/lib/db')).default();
+    let certificate = null;
+    if (db) {
+       certificate = db.prepare('SELECT * FROM certificates WHERE assessment_id = ?').get(assessment.id);
+    }
 
-    const certificate = db.prepare('SELECT * FROM certificates WHERE assessment_id = ?').get(assessment.id) as any;
-
-    return NextResponse.json({ company, assessment, score, certificate });
+    return NextResponse.json({ 
+      company: { id: assessment.company_id, name: assessment.company_name || 'My Company' }, 
+      assessment, 
+      score, 
+      certificate 
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
