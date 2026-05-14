@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 
 export interface Session {
   userId: string;
@@ -11,14 +11,16 @@ export interface Session {
 }
 
 export async function getSession(): Promise<Session | null> {
-  try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get('esgwise_session')?.value;
-    if (!raw) return null;
-    return JSON.parse(raw) as Session;
-  } catch {
-    return null;
-  }
+  const session = await auth();
+  if (!session?.user?.email) return null;
+  
+  return {
+    userId: (session.user as any).id,
+    companyId: (session.user as any).companyId,
+    email: session.user.email,
+    name: session.user.name || 'User',
+    role: (session.user as any).role || 'member',
+  };
 }
 
 export function requireSession(session: Session | null): Session {

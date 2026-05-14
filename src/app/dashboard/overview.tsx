@@ -4,20 +4,23 @@ import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { Session } from '@/lib/session';
 import { getSectorById } from '@/lib/gri-standards';
+import { motion } from 'framer-motion';
 import {
   ClipboardList, BarChart3, Target, Map, FileText, Award,
   ArrowRight, Leaf, TrendingUp, Users, Shield, AlertTriangle,
   CheckCircle, Clock, Zap
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import styles from './dashboard.module.css';
 
 interface Props {
   session: Session;
   company: any;
   assessment: any;
+  benchmarks?: any;
 }
 
-export function DashboardOverview({ session, company, assessment }: Props) {
+export function DashboardOverview({ session, company, assessment, benchmarks }: Props) {
   const { locale } = useI18n();
   const isAr = locale === 'ar';
   const sector = company ? getSectorById(company.sector) : null;
@@ -25,10 +28,28 @@ export function DashboardOverview({ session, company, assessment }: Props) {
   const hasAssessment = !!assessment;
   const progress = assessment?.progress || 0;
 
+  const containerVariants: import('framer-motion').Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants: import('framer-motion').Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className={styles.dashboard}>
+    <motion.div 
+      className={styles.dashboard}
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
       {/* Welcome */}
-      <div className={styles.welcome}>
+      <motion.div variants={itemVariants} className={styles.welcome}>
         <div>
           <h1>{isAr ? `مرحباً، ${session.name}` : `Welcome, ${session.name}`} 👋</h1>
           <p className="text-secondary">
@@ -41,10 +62,10 @@ export function DashboardOverview({ session, company, assessment }: Props) {
             {isAr ? 'ابدأ التقييم' : 'Start Assessment'}
           </Link>
         )}
-      </div>
+      </motion.div>
 
       {/* Quick Stats */}
-      <div className={styles.statsGrid}>
+      <motion.div variants={itemVariants} className={styles.statsGrid}>
         <div className={`card ${styles.statCard} ${styles.statEnv}`}>
           <div className={styles.statIcon}><Leaf size={24} /></div>
           <div className={styles.statLabel}>{isAr ? 'البيئة' : 'Environmental'}</div>
@@ -69,11 +90,11 @@ export function DashboardOverview({ session, company, assessment }: Props) {
           <div className={styles.statValue}>—</div>
           <div className={styles.statHint}>{isAr ? 'لم يتم التقييم بعد' : 'Not yet assessed'}</div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Assessment Progress */}
       {hasAssessment && (
-        <div className={`card ${styles.progressCard}`}>
+        <motion.div variants={itemVariants} className={`card ${styles.progressCard}`}>
           <div className="card-header">
             <div>
               <h3 className="card-title">{isAr ? 'تقدم التقييم' : 'Assessment Progress'}</h3>
@@ -92,12 +113,12 @@ export function DashboardOverview({ session, company, assessment }: Props) {
               {isAr ? 'متابعة' : 'Continue'} <ArrowRight size={14} />
             </Link>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Quick Actions */}
-      <h2 className={styles.sectionTitle}>{isAr ? 'إجراءات سريعة' : 'Quick Actions'}</h2>
-      <div className={styles.actionsGrid}>
+      <motion.h2 variants={itemVariants} className={styles.sectionTitle}>{isAr ? 'إجراءات سريعة' : 'Quick Actions'}</motion.h2>
+      <motion.div variants={itemVariants} className={styles.actionsGrid}>
         {[
           { href: '/dashboard/assessment', icon: ClipboardList, title: isAr ? 'التقييم' : 'Assessment', desc: isAr ? 'ابدأ أو أكمل تقييم ESG' : 'Start or continue ESG assessment', color: 'var(--color-env)' },
           { href: '/dashboard/analysis', icon: BarChart3, title: isAr ? 'التحليل' : 'Analysis', desc: isAr ? 'اعرض درجاتك وتحليلك' : 'View scores and AI analysis', color: 'var(--color-soc)' },
@@ -117,11 +138,11 @@ export function DashboardOverview({ session, company, assessment }: Props) {
             <ArrowRight size={16} className={styles.actionArrow} />
           </Link>
         ))}
-      </div>
+      </motion.div>
 
       {/* Year-over-Year Performance */}
-      <h2 className={styles.sectionTitle} style={{ marginTop: '2.5rem' }}>{isAr ? 'الأداء السنوي' : 'Year-over-Year Performance'}</h2>
-      <div className={`card ${styles.comparisonCard}`}>
+      <motion.h2 variants={itemVariants} className={styles.sectionTitle} style={{ marginTop: '2.5rem' }}>{isAr ? 'الأداء السنوي' : 'Year-over-Year Performance'}</motion.h2>
+      <motion.div variants={itemVariants} className={`card ${styles.comparisonCard}`}>
         <div className={styles.comparisonGrid}>
           <div className={styles.comparisonItem}>
             <div className={styles.comparisonHeader}>
@@ -159,11 +180,64 @@ export function DashboardOverview({ session, company, assessment }: Props) {
             <span className={styles.chartBarLabel}>2023</span>
           </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Industry Benchmarking */}
+      {benchmarks && (
+        <>
+          <motion.h2 variants={itemVariants} className={styles.sectionTitle} style={{ marginTop: '2.5rem' }}>{isAr ? 'معيار الصناعة' : 'Industry Benchmarking'}</motion.h2>
+          <motion.div variants={itemVariants} className="card">
+            <div className="card-header">
+              <h3 className="card-title">{isAr ? `مقارنة القطاع: ${sector?.name_ar || company?.sector}` : `Sector Comparison: ${sector?.name || company?.sector}`}</h3>
+              <p className="card-subtitle">{isAr ? `يعتمد على متوسط ${benchmarks.count} شركة` : `Based on ${benchmarks.count} company average`}</p>
+            </div>
+            <div style={{ width: '100%', height: 300, marginTop: '1.5rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    {
+                      name: isAr ? 'البيئة' : 'Env',
+                      You: hasAssessment && assessment.overall_score ? assessment.score_env : 0,
+                      Industry: benchmarks.env,
+                    },
+                    {
+                      name: isAr ? 'المجتمع' : 'Soc',
+                      You: hasAssessment && assessment.overall_score ? assessment.score_soc : 0,
+                      Industry: benchmarks.soc,
+                    },
+                    {
+                      name: isAr ? 'الحوكمة' : 'Gov',
+                      You: hasAssessment && assessment.overall_score ? assessment.score_gov : 0,
+                      Industry: benchmarks.gov,
+                    },
+                    {
+                      name: isAr ? 'الإجمالي' : 'Overall',
+                      You: hasAssessment && assessment.overall_score ? assessment.overall_score : 0,
+                      Industry: benchmarks.overall,
+                    },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="name" stroke="var(--color-text-muted)" />
+                  <YAxis stroke="var(--color-text-muted)" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
+                    itemStyle={{ color: 'var(--color-text)' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="You" name={isAr ? 'تقييمك' : 'Your Score'} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Industry" name={isAr ? 'متوسط القطاع' : 'Industry Average'} fill="var(--color-text-muted)" opacity={0.5} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+        </>
+      )}
 
       {/* Sector Info */}
       {sector && (
-        <div className={`card ${styles.sectorInfo}`}>
+        <motion.div variants={itemVariants} className={`card ${styles.sectorInfo}`}>
           <div className="card-header">
             <h3 className="card-title">{isAr ? 'قطاعك' : 'Your Sector'}: {isAr ? sector.name_ar : sector.name} {sector.icon}</h3>
           </div>
@@ -186,8 +260,8 @@ export function DashboardOverview({ session, company, assessment }: Props) {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

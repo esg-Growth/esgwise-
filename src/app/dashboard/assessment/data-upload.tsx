@@ -45,11 +45,11 @@ export function DataUploadPanel({ assessmentId, responses, onKpisAccepted }: Pro
     })();
   }, []);
 
-  const handleUpload = async (file: File, category: string) => {
+  const handleUpload = async (files: File[], category: string) => {
     setUploading(category);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      files.forEach(file => formData.append('files', file));
       formData.append('category', category);
       formData.append('assessmentId', assessmentId);
 
@@ -58,38 +58,48 @@ export function DataUploadPanel({ assessmentId, responses, onKpisAccepted }: Pro
       if (!uploadRes.ok) throw new Error(uploadData.error);
 
       // Refresh docs list
-      const newDoc: UploadedDoc = { id: uploadData.documentId, category, original_name: file.name, status: 'pending', created_at: new Date().toISOString() };
-      setDocuments(prev => [newDoc, ...prev]);
+      const newDocs: UploadedDoc[] = uploadData.documents.map((d: any) => ({
+        id: d.documentId,
+        category,
+        original_name: d.filename,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }));
+      setDocuments(prev => [...newDocs, ...prev]);
       setUploading(null);
 
-      // Start extraction
-      setExtracting(uploadData.documentId);
-      const extractRes = await fetch('/api/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: uploadData.documentId }),
-      });
-      const extractData = await extractRes.json();
-
-      if (extractRes.ok && extractData.result) {
-        setDocuments(prev => prev.map(d => d.id === uploadData.documentId ? {
-          ...d,
-          status: 'completed',
-          extraction_result: JSON.stringify(extractData.result),
-          raw_summary: extractData.result.summary,
-          raw_summary_ar: extractData.result.summary_ar,
-        } : d));
-
-        // Auto-open review
-        setReviewDoc({
-          ...newDoc,
-          status: 'completed',
-          extraction_result: JSON.stringify(extractData.result),
-          raw_summary: extractData.result.summary,
-          raw_summary_ar: extractData.result.summary_ar,
+      // Start extraction for all files
+      for (const newDoc of newDocs) {
+        setExtracting(newDoc.id);
+        const extractRes = await fetch('/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentId: newDoc.id }),
         });
-      } else {
-        setDocuments(prev => prev.map(d => d.id === uploadData.documentId ? { ...d, status: 'failed' } : d));
+        const extractData = await extractRes.json();
+
+        if (extractRes.ok && extractData.result) {
+          setDocuments(prev => prev.map(d => d.id === newDoc.id ? {
+            ...d,
+            status: 'completed',
+            extraction_result: JSON.stringify(extractData.result),
+            raw_summary: extractData.result.summary,
+            raw_summary_ar: extractData.result.summary_ar,
+          } : d));
+
+          // Auto-open review for the last document if multiple, or just the one
+          if (newDoc === newDocs[newDocs.length - 1]) {
+            setReviewDoc({
+              ...newDoc,
+              status: 'completed',
+              extraction_result: JSON.stringify(extractData.result),
+              raw_summary: extractData.result.summary,
+              raw_summary_ar: extractData.result.summary_ar,
+            });
+          }
+        } else {
+          setDocuments(prev => prev.map(d => d.id === newDoc.id ? { ...d, status: 'failed' } : d));
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -101,8 +111,8 @@ export function DataUploadPanel({ assessmentId, responses, onKpisAccepted }: Pro
   const handleDrop = (e: React.DragEvent, category: string) => {
     e.preventDefault();
     setDragOver(null);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleUpload(file, category);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) handleUpload(files, category);
   };
 
   const handleAcceptAll = async (doc: UploadedDoc) => {
@@ -200,10 +210,10 @@ export function DataUploadPanel({ assessmentId, responses, onKpisAccepted }: Pro
                 ) : (
                   <>
                     <FileUp size={20} />
-                    <span>{isAr ? 'اسحب الملف هنا أو' : 'Drag file here or'}</span>
+                    <span>{isAr ? 'اسحب الملف هنا أو' : 'Drag files here or'}</span>
                     <label className={styles.browseBtn}>
                       {isAr ? 'تصفح' : 'Browse'}
-                      <input type="file" hidden accept={source.acceptedFormats.join(',')} onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f, source.id); e.target.value = ''; }} />
+                      <input type="file" hidden multiple accept={source.acceptedFormats.join(',')} onChange={e => { const files = Array.from(e.target.files || []); if (files.length > 0) handleUpload(files, source.id); e.target.value = ''; }} />
                     </label>
                   </>
                 )}
@@ -316,16 +326,20 @@ function ExtractionReviewModal({ doc, responses, onClose, onAcceptAll, onAcceptS
               if (!kpi.questionId) return null;
               const isSelected = selections[kpi.questionId] ?? true;
               const existingVal = responses[kpi.questionId];
+              const isLowConfidence = kpi.confidence < 0.8;
               const confidenceColor = kpi.confidence >= 0.8 ? 'var(--color-success)' : kpi.confidence >= 0.5 ? 'var(--color-warning)' : 'var(--color-danger)';
 
               return (
-                <div key={i} className={`${styles.kpiItem} ${isSelected ? '' : styles.kpiItemDeselected}`}>
+                <div key={i} className={`${styles.kpiItem} ${isSelected ? '' : styles.kpiItemDeselected} ${isLowConfidence ? styles.lowConfidence : ''}`}>
                   <div className={styles.kpiCheckbox}>
                     <input type="checkbox" checked={isSelected} onChange={e => setSelections(prev => ({ ...prev, [kpi.questionId]: e.target.checked }))} />
                   </div>
 
                   <div className={styles.kpiContent}>
-                    <div className={styles.kpiLabel}>{kpi.label}</div>
+                    <div className={styles.kpiLabel}>
+                      {kpi.label}
+                      {isLowConfidence && <span title={isAr ? 'يتطلب المراجعة البشرية' : 'Requires human review'}><AlertTriangle size={14} style={{ color: 'var(--color-warning)', display: 'inline-block', marginInlineStart: 6, verticalAlign: 'middle' }} /></span>}
+                    </div>
                     <div className={styles.kpiMeta}>
                       <span className={styles.kpiQuestionId}>{kpi.questionId}</span>
                       <span className={styles.confidenceBadge} style={{ background: `${confidenceColor}15`, color: confidenceColor }}>

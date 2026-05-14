@@ -438,4 +438,45 @@ export async function getCertificateForAssessment(assessmentId: string) {
   return db.prepare('SELECT * FROM certificates WHERE assessment_id = ? LIMIT 1').get(assessmentId) as any;
 }
 
+export async function getIndustryBenchmarks(sectorId?: string) {
+  const db = getDb();
+  let assessments;
+  if (sectorId) {
+    assessments = db.prepare('SELECT id FROM assessments WHERE sector_id = ?').all(sectorId) as any[];
+  } else {
+    assessments = db.prepare('SELECT id FROM assessments').all() as any[];
+  }
+
+  if (!assessments.length) return null;
+
+  const { calculateScore } = require('./esg-scoring');
+  let totalEnv = 0, totalSoc = 0, totalGov = 0, totalOverall = 0;
+  let count = 0;
+
+  for (const assessment of assessments) {
+    const responses = db.prepare('SELECT question_id, value FROM assessment_responses WHERE assessment_id = ?').all(assessment.id) as any[];
+    if (responses.length > 0) {
+      const responseMap: Record<string, string> = {};
+      responses.forEach(r => responseMap[r.question_id] = r.value);
+      const score = calculateScore(responseMap);
+      
+      totalEnv += score.env;
+      totalSoc += score.soc;
+      totalGov += score.gov;
+      totalOverall += score.overall;
+      count++;
+    }
+  }
+
+  if (count === 0) return null;
+
+  return {
+    overall: totalOverall / count,
+    env: totalEnv / count,
+    soc: totalSoc / count,
+    gov: totalGov / count,
+    count
+  };
+}
+
 export default getDb;

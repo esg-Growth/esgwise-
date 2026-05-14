@@ -30,6 +30,7 @@ export const getCertificateByCode = db.getCertificateByCode;
 export const getCompanyById = db.getCompanyById;
 export const getAssessmentForCompany = db.getAssessmentForCompany;
 export const getCertificateForAssessment = db.getCertificateForAssessment;
+export const getIndustryBenchmarks = db.getIndustryBenchmarks;
 
 // Export default for backwards compatibility with any code calling getDb()
 export default function getDb() {

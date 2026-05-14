@@ -24,19 +24,29 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const { signIn } = await import('next-auth/react');
+      const res = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
-      router.push('/dashboard');
+      if (res?.error) {
+        throw new Error('Invalid email or password');
+      }
+      if (res?.ok) {
+        router.push('/dashboard');
+        router.refresh();
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'microsoft-entra-id') => {
+    const { signIn } = await import('next-auth/react');
+    await signIn(provider, { callbackUrl: '/dashboard' });
   };
 
   return (
@@ -100,6 +110,18 @@ export default function LoginPage() {
             <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
               {loading ? <span className="spinner" /> : t('auth.login')}
             </button>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+              <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#888', fontSize: '0.9rem' }}>
+                {isAr ? 'أو' : 'OR'}
+              </div>
+              <button type="button" className="btn btn-outline btn-full" onClick={() => handleOAuth('google')}>
+                {isAr ? 'تسجيل الدخول باستخدام جوجل' : 'Sign in with Google'}
+              </button>
+              <button type="button" className="btn btn-outline btn-full" onClick={() => handleOAuth('microsoft-entra-id')}>
+                {isAr ? 'تسجيل الدخول باستخدام مايكروسوفت' : 'Sign in with Microsoft'}
+              </button>
+            </div>
           </form>
 
           <p className={styles.authSwitch}>

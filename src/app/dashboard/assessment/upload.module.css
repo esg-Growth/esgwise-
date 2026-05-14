@@ -211,6 +211,8 @@
 }
 .kpiItem:hover { background: var(--color-bg); }
 .kpiItemDeselected { opacity: 0.45; }
+.lowConfidence { border-color: var(--color-warning); background: #fff8e6; }
+
 
 .kpiCheckbox { padding-top: 4px; }
 .kpiCheckbox input[type="checkbox"] {

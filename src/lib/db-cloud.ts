@@ -363,3 +363,39 @@ export async function getCertificateForAssessment(assessmentId: string) {
   if (snap.empty) return null;
   return { id: snap.docs[0].id, ...snap.docs[0].data() } as any;
 }
+
+export async function getIndustryBenchmarks(sectorId?: string) {
+  let query: any = db.collection('assessments');
+  if (sectorId) {
+    query = query.where('sector_id', '==', sectorId);
+  }
+  const snapshot = await query.get();
+  
+  if (snapshot.empty) return null;
+  
+  const { calculateScore } = require('./esg-scoring');
+  let totalEnv = 0, totalSoc = 0, totalGov = 0, totalOverall = 0;
+  let count = 0;
+  
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    if (data.responses && Object.keys(data.responses).length > 0) {
+      const score = calculateScore(data.responses);
+      totalEnv += score.env;
+      totalSoc += score.soc;
+      totalGov += score.gov;
+      totalOverall += score.overall;
+      count++;
+    }
+  }
+  
+  if (count === 0) return null;
+  
+  return {
+    overall: totalOverall / count,
+    env: totalEnv / count,
+    soc: totalSoc / count,
+    gov: totalGov / count,
+    count
+  };
+}

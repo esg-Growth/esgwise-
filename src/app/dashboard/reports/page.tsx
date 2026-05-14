@@ -50,43 +50,14 @@ export default function ReportsPage() {
   }, []);
 
   const handleExportPDF = async () => {
-    if (!reportRef.current) return;
     setExporting(true);
-    
     try {
-      // Dynamic import to avoid SSR issues and reduce initial bundle
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).default;
-
-      // Temporarily modify styles for better print layout
-      const originalWidth = reportRef.current.style.width;
-      reportRef.current.style.width = '210mm'; // A4 width
-      
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2, // High resolution
-        useCORS: true,
-        logging: false,
-        windowWidth: 1200 // Force wide layout even on mobile
-      });
-      
-      reportRef.current.style.width = originalWidth;
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      // If content is taller than 1 page, we might want to split, but for MVP we scale to fit or let it stretch
-      // A better approach for multi-page is standard window.print(), but html2canvas is requested
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`ESG_Report_${data?.company?.name || 'Company'}.pdf`);
+      const url = `/api/reports/pdf?lang=${locale}`;
+      window.open(url, '_blank');
     } catch (e) {
       console.error('PDF generation failed:', e);
       alert('Failed to generate PDF. Please try again.');
     }
-    
     setExporting(false);
   };
 
