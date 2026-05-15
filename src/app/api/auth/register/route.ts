@@ -24,13 +24,6 @@ export async function POST(req: Request) {
     const { id: userId, company_id: companyId } = await createUser(email, passwordHash, companyName);
 
     const response = NextResponse.json({ success: true, userId, companyId });
-    response.cookies.set('esgwise_session', JSON.stringify({ userId, companyId, email, name, role: 'owner' }), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    });
 
     return response;
   } catch (err: any) {

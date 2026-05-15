@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -7,17 +7,17 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(req: Request) {
   try {
     const { message, history } = await req.json();
-    const cookieStore = await cookies();
-    const sessionRaw = cookieStore.get('esgwise_session')?.value;
-    const session = sessionRaw ? JSON.parse(sessionRaw) : null;
+    const session = await auth();
+    const sessionUser = session?.user as any;
+
 
     let context = "";
-    if (session?.companyId) {
+    if (sessionUser?.companyId) {
       try {
         const { getCompanyById, getAssessmentForCompany } = await import('@/lib/db');
         
-        const company = await getCompanyById(session.companyId);
-        const assessment = await getAssessmentForCompany(session.companyId);
+        const company = await getCompanyById(sessionUser.companyId);
+        const assessment = await getAssessmentForCompany(sessionUser.companyId);
         
         context = `The user is from company "${company?.name || 'Unknown'}" in the "${company?.sector || 'Unknown'}" sector. `;
         if (assessment) {

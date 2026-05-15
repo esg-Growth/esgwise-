@@ -9,18 +9,20 @@ async function DashboardContent() {
   let company = null;
   let assessment = null;
   let benchmarks = null;
+  let score = null;
   try {
     if (session?.companyId) {
-      const { getCompanyById, getAssessmentForCompany, getIndustryBenchmarks } = await import('@/lib/db');
+      const { getCompanyById, getAssessmentForCompany, getCompanyScore, getIndustryBenchmarks } = await import('@/lib/db');
       company = await getCompanyById(session.companyId);
       assessment = await getAssessmentForCompany(session.companyId);
+      score = await getCompanyScore(session.companyId);
       benchmarks = await getIndustryBenchmarks(company?.sector);
     }
   } catch (err) {
     console.error('Error fetching dashboard data:', err);
   }
 
-  return <DashboardOverview session={session!} company={company} assessment={assessment} benchmarks={benchmarks} />;
+  return <DashboardOverview session={session!} company={company} assessment={assessment} score={score} benchmarks={benchmarks} />;
 }
 
 function DashboardSkeleton() {

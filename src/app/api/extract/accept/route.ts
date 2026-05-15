@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 import { processKpiActions } from '@/lib/db';
 import { ASSESSMENT_SECTIONS } from '@/lib/questionnaire';
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get('esgwise_session')?.value;
-    if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await auth();
+    if (!session || !session.user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const { assessmentId, actions } = await req.json();
     // actions: [{ provenanceId, questionId, value, action: 'accept' | 'reject' | 'edit' }]

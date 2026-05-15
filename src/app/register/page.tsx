@@ -39,6 +39,18 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Registration failed');
+      
+      const { signIn } = await import('next-auth/react');
+      const signInRes = await signIn('credentials', {
+        email,
+        password,
+        redirect: false
+      });
+      
+      if (signInRes?.error) {
+        throw new Error('Could not automatically sign in after registration');
+      }
+      
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);

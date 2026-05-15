@@ -39,6 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           role: user.role,
           companyId: user.company_id,
+          isAdmin: user.is_admin === 1,
         };
       },
     }),
@@ -60,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.companyId = (user as any).companyId;
         token.role = (user as any).role;
+        token.isAdmin = (user as any).isAdmin;
       } else if (token.email) {
          // Re-fetch from DB to keep role/companyId fresh
          const dbUser = await getUserByEmail(token.email);
@@ -67,6 +69,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.id = dbUser.id;
             token.companyId = dbUser.company_id;
             token.role = dbUser.role;
+            token.isAdmin = dbUser.is_admin === 1;
          }
       }
       return token;
@@ -76,6 +79,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (session.user as any).id = token.id;
         (session.user as any).companyId = token.companyId;
         (session.user as any).role = token.role;
+        (session.user as any).isAdmin = token.isAdmin;
       }
       return session;
     },

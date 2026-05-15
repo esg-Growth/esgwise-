@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuid } from 'uuid';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get('esgwise_session')?.value;
-    if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const session = JSON.parse(raw);
+    const session = await auth();
+    if (!session || !session.user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const sessionUser = session.user as any;
 
     const { action, assessmentId, responses } = await req.json();
     const { getAssessment, saveAssessment } = await import('@/lib/db');
@@ -22,18 +21,18 @@ export async function POST(req: Request) {
         Object.assign(responseMap, responses);
       }
       
-      const res = await saveAssessment(session.userId, responseMap, 'General');
+      const res = await saveAssessment(sessionUser.id, responseMap, 'General');
       return NextResponse.json({ success: true, assessmentId: res.id });
     }
 
     if (action === 'get') {
-      const assessment = await getAssessment(session.userId);
+      const assessment = await getAssessment(sessionUser.id);
       if (!assessment) return NextResponse.json({ assessment: null, responses: {} });
       return NextResponse.json({ assessment, responses: assessment.responses });
     }
 
     if (action === 'create') {
-      const res = await saveAssessment(session.userId, {}, 'General');
+      const res = await saveAssessment(sessionUser.id, {}, 'General');
       return NextResponse.json({ success: true, assessmentId: res.id });
     }
 

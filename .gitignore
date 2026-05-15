@@ -43,6 +43,9 @@ next-env.d.ts
 # local data
 data/
 
+# private documents
+docs-private/
+
 # firebase
 .firebase/
 firebase-debug.log*

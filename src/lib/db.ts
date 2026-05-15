@@ -29,8 +29,24 @@ export const issueCertificate = db.issueCertificate;
 export const getCertificateByCode = db.getCertificateByCode;
 export const getCompanyById = db.getCompanyById;
 export const getAssessmentForCompany = db.getAssessmentForCompany;
+export const getCompanyScore = (db as any).getCompanyScore;
 export const getCertificateForAssessment = db.getCertificateForAssessment;
 export const getIndustryBenchmarks = db.getIndustryBenchmarks;
+
+// Admin
+export const getAllUsers = db.getAllUsers;
+export const updateUserAdminStatus = db.updateUserAdminStatus;
+export const deleteUser = db.deleteUser;
+export const getAdminAnalytics = (db as any).getAdminAnalytics;
+export const getAdminCompaniesWithScores = (db as any).getAdminCompaniesWithScores;
+
+// Settings
+export const updateUserProfile = (db as any).updateUserProfile;
+export const getTenantSettings = (db as any).getTenantSettings;
+export const updateTenantSettings = (db as any).updateTenantSettings;
+export const getUsersByCompany = (db as any).getUsersByCompany;
+export const createCompanyUser = (db as any).createCompanyUser;
+export const updateUserPassword = (db as any).updateUserPassword;
 
 // Export default for backwards compatibility with any code calling getDb()
 export default function getDb() {

@@ -13,13 +13,13 @@ export interface Session {
 export async function getSession(): Promise<Session | null> {
   const session = await auth();
   if (!session?.user?.email) return null;
-  
   return {
     userId: (session.user as any).id,
     companyId: (session.user as any).companyId,
     email: session.user.email,
     name: session.user.name || 'User',
     role: (session.user as any).role || 'member',
+    isAdmin: (session.user as any).isAdmin === true,
   };
 }
 

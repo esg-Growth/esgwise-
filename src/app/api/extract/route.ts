@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 import fs from 'fs';
 import { getDocumentById, updateDocumentExtraction, updateDocumentStatus, saveKpiProvenanceBatch } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get('esgwise_session')?.value;
-    if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await auth();
+    if (!session || !session.user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const { documentId } = await req.json();
     if (!documentId) return NextResponse.json({ error: 'documentId is required' }, { status: 400 });

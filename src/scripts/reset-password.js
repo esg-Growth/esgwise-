@@ -10,7 +10,7 @@ async function resetPassword() {
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(newPassword, salt);
 
-  db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(hash, 'ahmad@technoseeds.com');
+  db.prepare('UPDATE users SET password_hash = ?, is_admin = 1 WHERE email = ?').run(hash, 'ahmad@technoseeds.com');
   
   console.log('Password for ahmad@technoseeds.com reset to:', newPassword);
 }

@@ -51,9 +51,47 @@ export async function createUser(email: string, passwordHash: string, companyNam
     name: email.split('@')[0],
     company_id: compRes.id,
     is_active: true,
+    is_admin: 1,
+    role: 'owner',
     created_at: new Date().toISOString(),
   });
   return { id: res.id, company_id: compRes.id };
+}
+
+export async function getUsersByCompany(companyId: string | null) {
+  const snapshot = await db.collection('users')
+    .where('company_id', '==', companyId)
+    .orderBy('created_at', 'desc')
+    .get();
+    
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      email: data.email,
+      name: data.name,
+      name_ar: data.name_ar,
+      role: data.role,
+      is_admin: data.is_admin,
+      is_active: data.is_active,
+      created_at: data.created_at,
+      last_login: data.last_login
+    };
+  }) as any[];
+}
+
+export async function createCompanyUser(email: string, passwordHash: string, name: string, companyId: string, role: string, isAdmin: boolean) {
+  const res = await db.collection('users').add({
+    email,
+    password_hash: passwordHash,
+    name,
+    company_id: companyId,
+    role,
+    is_admin: isAdmin ? 1 : 0,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  });
+  return { id: res.id, company_id: companyId };
 }
 
 export async function getCompanyById(companyId: string) {
@@ -389,8 +427,6 @@ export async function getIndustryBenchmarks(sectorId?: string) {
     }
   }
   
-  if (count === 0) return null;
-  
   return {
     overall: totalOverall / count,
     env: totalEnv / count,
@@ -398,4 +434,184 @@ export async function getIndustryBenchmarks(sectorId?: string) {
     gov: totalGov / count,
     count
   };
+}
+
+// ─── Admin Logic ───
+
+export async function getAllUsers() {
+  const snapshot = await db.collection('users').orderBy('created_at', 'desc').get();
+  const users = [] as any[];
+  
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    let company_name = '';
+    if (data.company_id) {
+      const compDoc = await db.collection('companies').doc(data.company_id).get();
+      company_name = compDoc.data()?.name || '';
+    }
+    users.push({
+      id: doc.id,
+      ...data,
+      company_name
+    });
+  }
+  
+  return users;
+}
+
+export async function updateUserAdminStatus(userId: string, isAdmin: boolean) {
+  await db.collection('users').doc(userId).update({
+    is_admin: isAdmin ? 1 : 0,
+    role: isAdmin ? 'owner' : 'member',
+    updated_at: new Date().toISOString()
+  });
+}
+
+export async function deleteUser(userId: string) {
+  // In a real Firestore app, we would use a Cloud Function or batch job to clean up references.
+  // For now we just delete the user document.
+  await db.collection('users').doc(userId).delete();
+}
+
+export async function getAdminAnalytics() {
+  const usersSnapshot = await db.collection('users').get();
+  const totalUsers = usersSnapshot.size;
+
+  const companiesSnapshot = await db.collection('companies').get();
+  const totalCompanies = companiesSnapshot.size;
+
+  const assessmentsSnapshot = await db.collection('assessments').get();
+  const totalAssessments = assessmentsSnapshot.size;
+  let completedAssessments = 0;
+  const recentAssessments: any[] = [];
+  assessmentsSnapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.status === 'completed' || data.status === 'certified') completedAssessments++;
+    recentAssessments.push({ id: doc.id, ...data });
+  });
+
+  const scoresSnapshot = await db.collection('esg_scores').get();
+  let totalEnv = 0, totalSoc = 0, totalGov = 0, totalOverall = 0;
+  scoresSnapshot.forEach(doc => {
+    const data = doc.data();
+    totalEnv += data.env_score || 0;
+    totalSoc += data.soc_score || 0;
+    totalGov += data.gov_score || 0;
+    totalOverall += data.overall_score || 0;
+  });
+  const scoresCount = scoresSnapshot.size || 1; // avoid division by zero
+
+  const certificatesSnapshot = await db.collection('certificates').get();
+  const totalCertificates = certificatesSnapshot.size;
+
+  const sectorsMap: Record<string, number> = {};
+  const sizesMap: Record<string, number> = {};
+  
+  // To populate company names in recent assessments
+  const companyNames: Record<string, string> = {};
+
+  companiesSnapshot.forEach(doc => {
+    const data = doc.data();
+    companyNames[doc.id] = data.name || 'Unknown';
+    if (data.sector) {
+      sectorsMap[data.sector] = (sectorsMap[data.sector] || 0) + 1;
+    }
+    const size = data.size || 'small';
+    sizesMap[size] = (sizesMap[size] || 0) + 1;
+  });
+
+  const sectors = Object.entries(sectorsMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const sizes = Object.entries(sizesMap)
+    .map(([name, count]) => ({ name, count }));
+
+  recentAssessments.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+  const formattedRecentAssessments = recentAssessments.slice(0, 5).map(a => ({
+    id: a.id,
+    title: a.title || 'Assessment',
+    company: companyNames[a.company_id] || 'Unknown',
+    status: a.status || 'draft',
+    progress: a.progress || 0,
+    date: a.updated_at
+  }));
+
+  return {
+    totalUsers,
+    totalCompanies,
+    assessments: {
+      total: totalAssessments,
+      completed: completedAssessments,
+      draft: totalAssessments - completedAssessments,
+    },
+    averageScores: {
+      overall: Math.round(totalOverall / scoresCount),
+      env: Math.round(totalEnv / scoresCount),
+      soc: Math.round(totalSoc / scoresCount),
+      gov: Math.round(totalGov / scoresCount),
+    },
+    sectors,
+    sizes,
+    totalCertificates,
+    recentAssessments: formattedRecentAssessments
+  };
+}
+
+export async function updateUserProfile(userId: string, name: string, companyId: string, companyName: string) {
+  await db.collection('users').doc(userId).update({ name, updated_at: new Date().toISOString() });
+  if (companyId && companyName) {
+    await db.collection('companies').doc(companyId).update({ name: companyName, updated_at: new Date().toISOString() });
+  }
+}
+
+export async function getTenantSettings() {
+  const doc = await db.collection('tenant_settings').doc('default').get();
+  if (!doc.exists) {
+    return {
+      primary_color: '#16a34a',
+      secondary_color: '#1e293b',
+      logo_base64: null,
+      report_header_text: '',
+      report_footer_text: ''
+    };
+  }
+  return doc.data();
+}
+
+export async function updateTenantSettings(data: any) {
+  await db.collection('tenant_settings').doc('default').set({
+    primary_color: data.primary_color || '#16a34a',
+    secondary_color: data.secondary_color || '#1e293b',
+    logo_base64: data.logo_base64 || null,
+    report_header_text: data.report_header_text || '',
+    report_footer_text: data.report_footer_text || '',
+    updated_at: new Date().toISOString()
+  }, { merge: true });
+}
+
+export async function getCompanyScore(companyId: string) {
+  const snapshot = await db.collection('esg_scores')
+    .where('company_id', '==', companyId)
+    .orderBy('created_at', 'desc')
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) return null;
+  const data = snapshot.docs[0].data();
+
+  let assessment_date = data.created_at;
+  if (data.assessment_id) {
+    const aDoc = await db.collection('assessments').doc(data.assessment_id).get();
+    if (aDoc.exists) {
+      assessment_date = aDoc.data()?.updated_at || data.created_at;
+    }
+  }
+
+  return {
+    id: snapshot.docs[0].id,
+    ...data,
+    assessment_date
+  } as any;
 }

@@ -10,17 +10,18 @@ async function makeGmAdmin() {
 
   const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
 
+  const newPassword = 'adminpassword123';
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(newPassword, salt);
+
   if (user) {
     db.prepare(`
       UPDATE users 
-      SET role = 'owner', is_admin = 1, is_active = 1
+      SET role = 'owner', is_admin = 1, is_active = 1, password_hash = ?
       WHERE id = ?
-    `).run(user.id);
-    console.log(`Updated existing user ${email} to admin.`);
+    `).run(hash, user.id);
+    console.log(`Updated existing user ${email} to admin. Password reset to: ${newPassword}`);
   } else {
-    const newPassword = 'adminpassword123';
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(newPassword, salt);
     const userId = randomUUID();
 
     db.prepare(`

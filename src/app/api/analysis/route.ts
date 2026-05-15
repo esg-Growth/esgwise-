@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/auth';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get('esgwise_session')?.value;
-    if (!raw) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    const session = JSON.parse(raw);
+    const session = await auth();
+    if (!session || !session.user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const sessionUser = session.user as any;
 
     const { getAssessment, getCertificateByCode } = await import('@/lib/db');
     const { calculateEsgScore } = await import('@/lib/esg-scoring');
 
-    const assessment = await getAssessment(session.userId);
+    const assessment = await getAssessment(sessionUser.id);
     if (!assessment) return NextResponse.json({ error: 'No assessment found' }, { status: 404 });
 
     const score = calculateEsgScore(assessment.responses, assessment.sector_id || 'other');

@@ -17,10 +17,11 @@ interface Props {
   session: Session;
   company: any;
   assessment: any;
+  score?: any;
   benchmarks?: any;
 }
 
-export function DashboardOverview({ session, company, assessment, benchmarks }: Props) {
+export function DashboardOverview({ session, company, assessment, score, benchmarks }: Props) {
   const { locale } = useI18n();
   const isAr = locale === 'ar';
   const sector = company ? getSectorById(company.sector) : null;
@@ -69,25 +70,25 @@ export function DashboardOverview({ session, company, assessment, benchmarks }: 
         <div className={`card ${styles.statCard} ${styles.statEnv}`}>
           <div className={styles.statIcon}><Leaf size={24} /></div>
           <div className={styles.statLabel}>{isAr ? 'البيئة' : 'Environmental'}</div>
-          <div className={styles.statValue}>{hasAssessment ? '—' : '—'}</div>
+          <div className={styles.statValue}>{score ? `${score.score_env}%` : '—'}</div>
           <div className={styles.statHint}>{isAr ? 'ابدأ التقييم لحساب الدرجة' : 'Start assessment to calculate'}</div>
         </div>
         <div className={`card ${styles.statCard} ${styles.statSoc}`}>
           <div className={styles.statIcon}><Users size={24} /></div>
           <div className={styles.statLabel}>{isAr ? 'المجتمع' : 'Social'}</div>
-          <div className={styles.statValue}>—</div>
+          <div className={styles.statValue}>{score ? `${score.score_soc}%` : '—'}</div>
           <div className={styles.statHint}>{isAr ? 'بانتظار البيانات' : 'Awaiting data'}</div>
         </div>
         <div className={`card ${styles.statCard} ${styles.statGov}`}>
           <div className={styles.statIcon}><Shield size={24} /></div>
           <div className={styles.statLabel}>{isAr ? 'الحوكمة' : 'Governance'}</div>
-          <div className={styles.statValue}>—</div>
+          <div className={styles.statValue}>{score ? `${score.score_gov}%` : '—'}</div>
           <div className={styles.statHint}>{isAr ? 'بانتظار البيانات' : 'Awaiting data'}</div>
         </div>
         <div className={`card ${styles.statCard} ${styles.statOverall}`}>
           <div className={styles.statIcon}><TrendingUp size={24} /></div>
           <div className={styles.statLabel}>{isAr ? 'الدرجة الإجمالية' : 'Overall ESG Score'}</div>
-          <div className={styles.statValue}>—</div>
+          <div className={styles.statValue}>{score ? `${score.overall_score}%` : '—'}</div>
           <div className={styles.statHint}>{isAr ? 'لم يتم التقييم بعد' : 'Not yet assessed'}</div>
         </div>
       </motion.div>
@@ -150,7 +151,7 @@ export function DashboardOverview({ session, company, assessment, benchmarks }: 
               <span>{isAr ? 'العام الحالي (2024)' : 'Current Year (2024)'}</span>
             </div>
             <div className={styles.comparisonValue}>
-              {hasAssessment && assessment.status === 'completed' ? '74%' : '—'}
+              {score ? `${score.overall_score}%` : '—'}
             </div>
           </div>
           <div className={styles.comparisonItem}>
@@ -197,22 +198,22 @@ export function DashboardOverview({ session, company, assessment, benchmarks }: 
                   data={[
                     {
                       name: isAr ? 'البيئة' : 'Env',
-                      You: hasAssessment && assessment.overall_score ? assessment.score_env : 0,
+                      You: score ? score.score_env : 0,
                       Industry: benchmarks.env,
                     },
                     {
                       name: isAr ? 'المجتمع' : 'Soc',
-                      You: hasAssessment && assessment.overall_score ? assessment.score_soc : 0,
+                      You: score ? score.score_soc : 0,
                       Industry: benchmarks.soc,
                     },
                     {
                       name: isAr ? 'الحوكمة' : 'Gov',
-                      You: hasAssessment && assessment.overall_score ? assessment.score_gov : 0,
+                      You: score ? score.score_gov : 0,
                       Industry: benchmarks.gov,
                     },
                     {
                       name: isAr ? 'الإجمالي' : 'Overall',
-                      You: hasAssessment && assessment.overall_score ? assessment.overall_score : 0,
+                      You: score ? score.overall_score : 0,
                       Industry: benchmarks.overall,
                     },
                   ]}
