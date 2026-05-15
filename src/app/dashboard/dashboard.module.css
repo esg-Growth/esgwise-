@@ -152,7 +152,7 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.sectorWeights { }
+
 .weightBars {
   display: flex;
   flex-direction: column;
@@ -193,7 +193,7 @@
   gap: var(--space-xl);
   align-items: center;
 }
-.comparisonItem { }
+
 .comparisonHeader {
   display: flex;
   align-items: center;
