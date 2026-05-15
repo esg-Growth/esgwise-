@@ -61,10 +61,9 @@ export async function createUser(email: string, passwordHash: string, companyNam
 export async function getUsersByCompany(companyId: string | null) {
   const snapshot = await db.collection('users')
     .where('company_id', '==', companyId)
-    .orderBy('created_at', 'desc')
     .get();
     
-  return snapshot.docs.map(doc => {
+  const users = snapshot.docs.map(doc => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -78,6 +77,8 @@ export async function getUsersByCompany(companyId: string | null) {
       last_login: data.last_login
     };
   }) as any[];
+  
+  return users.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 }
 
 export async function createCompanyUser(email: string, passwordHash: string, name: string, companyId: string, role: string, isAdmin: boolean) {
