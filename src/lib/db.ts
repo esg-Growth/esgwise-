@@ -48,6 +48,10 @@ export const getUsersByCompany = (db as any).getUsersByCompany;
 export const createCompanyUser = (db as any).createCompanyUser;
 export const updateUserPassword = (db as any).updateUserPassword;
 
+// Auth
+export const saveResetToken = (db as any).saveResetToken;
+export const verifyResetToken = (db as any).verifyResetToken;
+
 // Export default for backwards compatibility with any code calling getDb()
 export default function getDb() {
   if (USE_LOCAL) {

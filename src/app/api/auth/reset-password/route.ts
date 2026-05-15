@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyResetToken, getUserByEmail, updateUserPassword } from '@/lib/db-cloud';
+import { verifyResetToken, getUserByEmail, updateUserPassword } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function GET(req: Request) {

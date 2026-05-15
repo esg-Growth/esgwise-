@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserByEmail, saveResetToken } from '@/lib/db-cloud';
+import { getUserByEmail, saveResetToken } from '@/lib/db';
 import crypto from 'crypto';
 
 export async function POST(req: Request) {
@@ -21,7 +21,12 @@ export async function POST(req: Request) {
     await saveResetToken(email, token);
 
     // Construct the reset link
-    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://esgwise-6d39e.web.app'}/reset-password/${token}`;
+    // Get protocol and host from request if possible, or use env var
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+    
+    const resetLink = `${baseUrl}/reset-password/${token}`;
 
     // LOG THE LINK FOR THE DEVELOPER (Since we don't have SMTP configured yet)
     console.log('-------------------------------------------');
@@ -32,7 +37,10 @@ export async function POST(req: Request) {
     // In a real app, send the email here
     // await sendEmail(email, 'Reset your password', `Click here: ${resetLink}`);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      testResetLink: resetLink // Return for testing UI since no SMTP is configured
+    });
   } catch (err: any) {
     console.error('Forgot password error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

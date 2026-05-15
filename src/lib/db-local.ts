@@ -35,6 +35,12 @@ function initializeSchema(db: Database.Database) {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS password_resets (
+      email TEXT NOT NULL,
+      token TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
 
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -283,6 +289,36 @@ export async function updateUserPassword(userId: string, passwordHash: string) {
   const db = getDb();
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, userId);
 }
+
+export async function saveResetToken(email: string, token: string) {
+  const db = getDb();
+  const expires = new Date();
+  expires.setHours(expires.getHours() + 1); // 1 hour expiration
+  
+  db.prepare(`
+    INSERT INTO password_resets (email, token, expires_at)
+    VALUES (?, ?, ?)
+  `).run(email, token, expires.toISOString());
+}
+
+export async function verifyResetToken(token: string) {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT email, expires_at FROM password_resets
+    WHERE token = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(token) as any;
+  
+  if (!row) return null;
+  
+  const now = new Date();
+  const expiresAt = new Date(row.expires_at);
+  
+  if (now > expiresAt) return null;
+  return row.email;
+}
+
 
 export async function getCompanyById(companyId: string) {
   const db = getDb();

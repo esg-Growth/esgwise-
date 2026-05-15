@@ -14,12 +14,14 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [testLink, setTestLink] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
+    setTestLink('');
 
     try {
       const res = await fetch('/api/auth/forgot-password', {
@@ -30,6 +32,9 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
       setMessage(isAr ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني' : 'Password reset link has been sent to your email');
+      if (data.testResetLink) {
+        setTestLink(data.testResetLink);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -64,8 +69,18 @@ export default function ForgotPasswordPage() {
 
           {error && <div className={styles.authError}>{error}</div>}
           {message && (
-            <div className={styles.authSuccess} style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CheckCircle size={18} /> {message}
+            <div className={styles.authSuccess} style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CheckCircle size={18} /> {message}
+              </div>
+              {testLink && (
+                <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', wordBreak: 'break-all', padding: '0.5rem', background: 'rgba(255,255,255,0.5)', borderRadius: '4px' }}>
+                  <strong>Development Test Link:</strong> <br/>
+                  <Link href={testLink} style={{ color: '#059669', textDecoration: 'underline' }}>
+                    {testLink}
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
