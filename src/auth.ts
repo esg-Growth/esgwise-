@@ -28,19 +28,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const user = await getUserByEmail(credentials.email as string);
-        if (!user || !user.password_hash) return null;
-        const isValid = await bcrypt.compare(credentials.password as string, user.password_hash);
-        if (!isValid) return null;
-        
-        return {
+        try {
+          const user = await getUserByEmail(credentials.email as string);
+          if (!user || !user.password_hash) return null;
+          const isValid = await bcrypt.compare(credentials.password as string, user.password_hash);
+          if (!isValid) return null;
+          
+          return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
           companyId: user.company_id,
           isAdmin: user.is_admin === 1,
-        };
+          };
+        } catch (error) {
+          console.error("Authentication Database Error:", error);
+          return null;
+        }
       },
     }),
   ],
