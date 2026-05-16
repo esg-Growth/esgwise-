@@ -1,16 +1,15 @@
 /**
  * ESGwise Database Bridge
- * This file delegates database operations to either Cloud Firestore or Local SQLite.
- * By default, it uses Cloud Firestore.
+ * This file delegates database operations to Local SQLite ONLY.
+ * Disconnected from Cloud Firestore as requested.
  */
 
-import * as cloud from './db-cloud';
 import * as local from './db-local';
 
-const USE_LOCAL = process.env.USE_LOCAL_DB === 'true';
+const USE_LOCAL = true;
 
-// Choose implementation
-const db = USE_LOCAL ? local : cloud;
+// Always use local implementation
+const db = local;
 
 export const getUserByEmail = db.getUserByEmail;
 export const createUser = db.createUser;
@@ -54,8 +53,5 @@ export const verifyResetToken = (db as any).verifyResetToken;
 
 // Export default for backwards compatibility with any code calling getDb()
 export default function getDb() {
-  if (USE_LOCAL) {
-    return (local as any).default();
-  }
-  return null; // Firestore doesn't use the same pattern
+  return (local as any).default();
 }
