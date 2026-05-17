@@ -18,6 +18,7 @@ export {
   updateUserPassword,
   saveResetToken,
   verifyResetToken,
+  invalidateResetToken,
 
   // ── Reporter / Client Management ──
   getReporterClients,

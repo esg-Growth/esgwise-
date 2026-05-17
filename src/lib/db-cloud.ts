@@ -166,6 +166,16 @@ export async function verifyResetToken(token: string) {
   return data.email;
 }
 
+export async function invalidateResetToken(token: string) {
+  const snapshot = await db.collection('password_resets').where('token', '==', token).get();
+  if (snapshot.empty) return;
+  const batch = db.batch();
+  snapshot.docs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+}
+
 // ═══════════════════════════════════════════════════════════
 //  REPORTER / CLIENT MANAGEMENT
 // ═══════════════════════════════════════════════════════════

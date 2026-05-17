@@ -17,7 +17,7 @@ function loadImg(name: string) {
 function h1(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 }, children: [new TextRun({ text: t, bold: true, color: BRAND.primary, font: 'Calibri', size: 48 })] }); }
 function h2(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 }, children: [new TextRun({ text: t, bold: true, color: BRAND.dark, font: 'Calibri', size: 36 })] }); }
 function h3(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: t, bold: true, color: BRAND.primary, font: 'Calibri', size: 28 })] }); }
-function p(t: string, o: any = {}) { return new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: t, font: 'Calibri', size: 22, color: o.color || '333333', bold: o.bold, italics: o.italic })] }); }
+function p(t: string, o: any = {}) { return new Paragraph({ alignment: o.align, spacing: { after: 120 }, children: [new TextRun({ text: t, font: 'Calibri', size: 22, color: o.color || '333333', bold: o.bold, italics: o.italic })] }); }
 function bullet(t: string) { return new Paragraph({ bullet: { level: 0 }, spacing: { after: 60 }, children: [new TextRun({ text: t, font: 'Calibri', size: 22, color: '333333' })] }); }
 function cel(t: string, o: any = {}) { return new TableCell({ width: { size: o.w || 4500, type: WidthType.DXA }, shading: o.sh ? { type: ShadingType.SOLID, color: o.sh } : undefined, children: [new Paragraph({ children: [new TextRun({ text: t, font: 'Calibri', size: 20, bold: o.b, color: o.c || (o.sh ? 'FFFFFF' : '333333') })] })] }); }
 function hRow(ts: string[], w = 4500) { return new TableRow({ children: ts.map(t => cel(t, { b: true, sh: BRAND.primary, c: 'FFFFFF', w })) }); }
@@ -293,8 +293,12 @@ async function main() {
   const autoScreens = allFiles.filter(f => f.startsWith('auto_screen_')).sort((a, b) => {
     return parseInt(a.split('_')[2]) - parseInt(b.split('_')[2]);
   });
-  for (const screen of autoScreens) {
+  for (let i = 0; i < autoScreens.length; i++) {
+     const screen = autoScreens[i];
      const imgData = loadImg(screen);
+     if (!imgData) continue;
+     
+     s.push(p(`Workflow Step ${i + 1}`, { align: AlignmentType.CENTER, bold: true, color: BRAND.primary }));
      const pImg = img(imgData);
      if (pImg) s.push(pImg);
   }

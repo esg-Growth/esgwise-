@@ -117,6 +117,22 @@ async function main() {
   // === PRODUCT ===
   sections.push(heading('🏗️ Product Overview'));
 
+  sections.push(heading('Application Workflow', HeadingLevel.HEADING_2, BRAND.dark));
+  sections.push(para('The ESGwise platform provides a comprehensive and seamless workflow connecting ESG consultants (Reporters) with their client organizations.'));
+  
+  const businessModelChart = loadImg('proposed_business_model.png');
+  const businessModelImg = imgParagraph(businessModelChart, 680, 480);
+  if (businessModelImg) sections.push(businessModelImg);
+
+  const workflowChart = loadImg('reporter_and_company_flow.png');
+  const workflowImg = imgParagraph(workflowChart, 680, 480);
+  if (workflowImg) sections.push(workflowImg);
+
+  const reporterWorkflowChart = loadImg('reporter_workflow.png');
+  const reporterWorkflowImg = imgParagraph(reporterWorkflowChart, 680, 480);
+  if (reporterWorkflowImg) sections.push(reporterWorkflowImg);
+  sections.push(pageBreak());
+
   sections.push(heading('Seamless Dual Onboarding', HeadingLevel.HEADING_2, BRAND.dark));
   sections.push(para('A unified entry point allows both Companies (Self-Service) and Consultants (Reporters) to register and manage their distinct workflows securely.'));
   const regImg = imgParagraph(regType);
@@ -271,8 +287,12 @@ async function main() {
   const autoScreens = allFiles.filter(f => f.startsWith('auto_screen_')).sort((a, b) => {
     return parseInt(a.split('_')[2]) - parseInt(b.split('_')[2]);
   });
-  for (const screen of autoScreens) {
+  for (let i = 0; i < autoScreens.length; i++) {
+     const screen = autoScreens[i];
      const imgData = loadImg(screen);
+     if (!imgData) continue;
+     
+     sections.push(para(`Workflow Step ${i + 1}`, { align: AlignmentType.CENTER, bold: true, color: BRAND.primary }));
      const pImg = imgParagraph(imgData);
      if (pImg) sections.push(pImg);
   }

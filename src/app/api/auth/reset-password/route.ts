@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyResetToken, getUserByEmail, updateUserPassword } from '@/lib/db';
+import { verifyResetToken, getUserByEmail, updateUserPassword, invalidateResetToken } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export async function GET(req: Request) {
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
     await updateUserPassword(user.id, passwordHash);
 
-    // TODO: Invalidate token after use (e.g. by deleting from DB or marking as used)
+    await invalidateResetToken(token);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
