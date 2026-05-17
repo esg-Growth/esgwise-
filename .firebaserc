@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "esgwise-6d39e"
+  },
   "targets": {},
   "etags": {}
 }

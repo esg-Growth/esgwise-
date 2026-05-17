@@ -17,6 +17,7 @@ const translations: Record<string, Record<Locale, string>> = {
   'nav.assistant': { en: 'AI Assistant', ar: 'المساعد الذكي' },
   'nav.settings': { en: 'Settings', ar: 'الإعدادات' },
   'nav.admin': { en: 'Admin', ar: 'المسؤول' },
+  'nav.clients': { en: 'My Clients', ar: 'عملائي' },
 
   // Auth
   'auth.login': { en: 'Sign In', ar: 'تسجيل الدخول' },

@@ -6,10 +6,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import { useTheme } from '@/components/providers';
 import { Session } from '@/lib/session';
+import { useSession } from 'next-auth/react';
 import {
   Leaf, LayoutDashboard, ClipboardList, BarChart3, Target, Map, FileText,
   Award, Bot, Settings, Shield, Menu, X, Globe, Sun, Moon, LogOut,
-  ChevronLeft, Bell, User
+  ChevronLeft, Bell, User, Users, Briefcase, ChevronDown, Building2
 } from 'lucide-react';
 import styles from './shell.module.css';
 
@@ -29,6 +30,10 @@ const NAV_ITEMS = [
   { href: '/dashboard/assistant', icon: Bot, label: 'nav.assistant' },
 ];
 
+const REPORTER_ITEMS = [
+  { href: '/dashboard/clients', icon: Users, label: 'nav.clients' },
+];
+
 const ADMIN_ITEMS = [
   { href: '/dashboard/admin', icon: Shield, label: 'nav.admin' },
 ];
@@ -38,9 +43,13 @@ export function DashboardShell({ session, children }: Props) {
   const { theme, toggle } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+  const { update } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
+  const [clientCompanies, setClientCompanies] = useState<any[]>([]);
+  const [activeCompanyName, setActiveCompanyName] = useState<string | null>(null);
   const isAr = locale === 'ar';
 
   useEffect(() => {
@@ -56,9 +65,34 @@ export function DashboardShell({ session, children }: Props) {
     setShowOnboarding(false);
   };
 
+  // Load reporter's client companies for the switcher
+  useEffect(() => {
+    if (session.role === 'reporter') {
+      fetch('/api/reporter/clients')
+        .then(r => r.json())
+        .then(data => {
+          setClientCompanies(data.clients || []);
+          // If there's an active company, find its name
+          if (session.activeCompanyId) {
+            const active = (data.clients || []).find((c: any) => c.id === session.activeCompanyId);
+            setActiveCompanyName(active?.name || null);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session.role, session.activeCompanyId]);
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
+  };
+
+  const handleSwitchCompany = async (companyId: string, companyName: string) => {
+    setActiveCompanyName(companyName);
+    setCompanySwitcherOpen(false);
+    // Update the NextAuth session with the new active company
+    await update({ activeCompanyId: companyId });
+    router.refresh();
   };
 
   const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
@@ -77,6 +111,42 @@ export function DashboardShell({ session, children }: Props) {
           </button>
         </div>
 
+        {/* Company Switcher for Reporters */}
+        {session.role === 'reporter' && sidebarOpen && (
+          <div className={styles.companySwitcher}>
+            <button
+              className={styles.switcherBtn}
+              onClick={() => setCompanySwitcherOpen(!companySwitcherOpen)}
+            >
+              <Building2 size={16} />
+              <span className={styles.switcherLabel}>
+                {activeCompanyName || (isAr ? 'اختر شركة' : 'Select Company')}
+              </span>
+              <ChevronDown size={14} style={{ transform: companySwitcherOpen ? 'rotate(180deg)' : 'none', transition: 'var(--transition-fast)', marginLeft: 'auto' }} />
+            </button>
+            {companySwitcherOpen && (
+              <div className={styles.switcherDropdown}>
+                {clientCompanies.length === 0 ? (
+                  <div className={styles.switcherEmpty}>
+                    {isAr ? 'لا يوجد عملاء' : 'No clients yet'}
+                  </div>
+                ) : (
+                  clientCompanies.map(c => (
+                    <button
+                      key={c.id}
+                      className={`${styles.switcherItem} ${c.id === session.activeCompanyId ? styles.switcherItemActive : ''}`}
+                      onClick={() => handleSwitchCompany(c.id, c.name)}
+                    >
+                      <span className={styles.switcherDot} />
+                      {c.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <nav className={styles.sidebarNav}>
           {NAV_ITEMS.map(item => (
             <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
@@ -84,6 +154,18 @@ export function DashboardShell({ session, children }: Props) {
               {sidebarOpen && <span>{t(item.label)}</span>}
             </Link>
           ))}
+
+          {session.role === 'reporter' && (
+            <>
+              <div className={styles.navDivider} />
+              {REPORTER_ITEMS.map(item => (
+                <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                  <item.icon size={20} />
+                  {sidebarOpen && <span>{t(item.label)}</span>}
+                </Link>
+              ))}
+            </>
+          )}
 
           {session.isAdmin && (
             <>

@@ -51,3 +51,4 @@ docs-private/
 firebase-debug.log*
 firestore.indexes.json
 firestore.rules
+*-firebase-adminsdk-*.json

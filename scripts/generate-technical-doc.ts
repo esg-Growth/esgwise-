@@ -3,10 +3,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const BRAND = { primary: '0F766E', gold: 'B8960C', dark: '1A1A2E', gray: '6B7280' };
-const IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\dca7e56f-aef8-4b43-b850-1deabbfe5395';
+const OLD_IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\dca7e56f-aef8-4b43-b850-1deabbfe5395';
+const CURRENT_IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\ae60c3d1-f5d3-4996-a38a-074a408496e7';
 const OUT_DIR = path.join(process.cwd(), 'docs-private');
 
-function loadImg(name: string) { const p = path.join(IMG_DIR, name); return fs.existsSync(p) ? fs.readFileSync(p) : null; }
+function loadImg(name: string) {
+  let p = path.join(CURRENT_IMG_DIR, name);
+  if (fs.existsSync(p)) return fs.readFileSync(p);
+  p = path.join(OLD_IMG_DIR, name);
+  if (fs.existsSync(p)) return fs.readFileSync(p);
+  return null;
+}
 function h1(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 }, children: [new TextRun({ text: t, bold: true, color: BRAND.primary, font: 'Calibri', size: 48 })] }); }
 function h2(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 }, children: [new TextRun({ text: t, bold: true, color: BRAND.dark, font: 'Calibri', size: 36 })] }); }
 function h3(t: string) { return new Paragraph({ heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: t, bold: true, color: BRAND.primary, font: 'Calibri', size: 28 })] }); }
@@ -19,13 +26,16 @@ function img(d: Buffer | null, w = 680, h = 380) { return d ? new Paragraph({ al
 function pb() { return new Paragraph({ children: [new PageBreak()] }); }
 
 async function main() {
-  const landing = loadImg('landing_page_1778814083655.png');
+  const landing = loadImg('home_page_1779034499093.png') || loadImg('landing_page_1778814083655.png');
+  const regType = loadImg('registration_type_step_1779034923365.png');
+  const repStep = loadImg('reporter_step_1_1779034943432.png');
+  const compStep = loadImg('company_step_1_1779034984033.png');
   const dashboard = loadImg('dashboard_page_1778814103470.png');
   const assessment = loadImg('assessment_page_loading_1778814119002.png');
   const assessManual = loadImg('assessment_page_manual_entry_1778814128573.png');
   const analysis = loadImg('analysis_page_final_1778814153974.png');
-  const adminTop = loadImg('admin_panel_top_v2_1778814540366.png');
-  const portfolio = loadImg('admin_panel_portfolio_v2_1778814555662.png');
+  const adminTop = loadImg('clients_page_logged_in_1779035033306.png') || loadImg('admin_panel_top_v2_1778814540366.png');
+  const portfolio = loadImg('clients_page_logged_in_1779035033306.png') || loadImg('admin_panel_portfolio_v2_1778814555662.png');
   const reports = loadImg('reports_page_final_1778814196292.png');
 
   const s: (Paragraph | Table)[] = [];
@@ -101,6 +111,16 @@ async function main() {
   s.push(h2('4.1 Landing Page & Onboarding'));
   s.push(p('The public-facing landing page communicates ESGwise\'s value proposition with a modern, professional design featuring interactive ESG score visualization, bilingual toggle (EN/AR with full RTL), and dark/light mode.'));
   const li = img(landing); if (li) s.push(li);
+  
+  s.push(p('A unified entry point allows both Companies (Self-Service) and Consultants (Reporters) to register and manage their distinct workflows securely.'));
+  const regImg = img(regType); if (regImg) s.push(regImg);
+  
+  s.push(p('Consultants (Reporters) are guided through a tailored onboarding flow to set up their consulting practice and manage client companies.'));
+  const repsi = img(repStep); if (repsi) s.push(repsi);
+  
+  s.push(p('Companies are guided through an onboarding flow to input their sector, size, and other details necessary for the AI-powered ESG assessment.'));
+  const compsi = img(compStep); if (compsi) s.push(compsi);
+  
   s.push(pb());
 
   s.push(h2('4.2 Company Dashboard'));
@@ -264,6 +284,20 @@ async function main() {
   s.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Building the ESG infrastructure for emerging markets.', font: 'Calibri', size: 24, italics: true, color: BRAND.dark })] }));
   s.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 400 }, children: [new TextRun({ text: '© 2026 TechnoSeeds International. All rights reserved.', font: 'Calibri', size: 20, color: BRAND.gray })] }));
 
+  // 10. APPENDIX
+  s.push(pb());
+  s.push(h1('10. Appendix: Full Screen Flow'));
+  s.push(p('The following screens represent a comprehensive capture of the ESGwise platform, showing end-to-end workflows.'));
+  
+  const allFiles = fs.readdirSync(CURRENT_IMG_DIR);
+  const autoScreens = allFiles.filter(f => f.startsWith('auto_screen_')).sort((a, b) => {
+    return parseInt(a.split('_')[2]) - parseInt(b.split('_')[2]);
+  });
+  for (const screen of autoScreens) {
+     const imgData = loadImg(screen);
+     const pImg = img(imgData);
+     if (pImg) s.push(pImg);
+  }
   const doc = new Document({ styles: { default: { document: { run: { font: 'Calibri', size: 22 } } } }, sections: [{ children: s }] });
   const buffer = await Packer.toBuffer(doc);
   const outPath = path.join(OUT_DIR, 'ESGwise_Technical_Vision.docx');

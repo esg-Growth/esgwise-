@@ -10,16 +10,34 @@ async function DashboardContent() {
   let assessment = null;
   let benchmarks = null;
   let score = null;
+  let reporterClients = null;
+
   try {
-    if (session?.companyId) {
-      const { getCompanyById, getAssessmentForCompany, getCompanyScore, getIndustryBenchmarks } = await import('@/lib/db');
-      company = await getCompanyById(session.companyId);
-      assessment = await getAssessmentForCompany(session.companyId);
-      score = await getCompanyScore(session.companyId);
+    const { getCompanyById, getAssessmentForCompany, getCompanyScore, getIndustryBenchmarks, getReporterClients } = await import('@/lib/db');
+
+    const effectiveCompanyId = session?.activeCompanyId || session?.companyId;
+
+    if (effectiveCompanyId) {
+      company = await getCompanyById(effectiveCompanyId);
+      assessment = await getAssessmentForCompany(effectiveCompanyId);
+      score = await getCompanyScore(effectiveCompanyId);
       benchmarks = await getIndustryBenchmarks(company?.sector);
+    } else if (session?.role === 'reporter' && session?.reporterId) {
+      const clients = await getReporterClients(session.reporterId);
+      const clientsWithData = await Promise.all(clients.map(async (c: any) => {
+        const cScore = await getCompanyScore(c.id);
+        const cAssessment = await getAssessmentForCompany(c.id);
+        return { ...c, score: cScore, assessment: cAssessment };
+      }));
+      reporterClients = clientsWithData;
     }
   } catch (err) {
     console.error('Error fetching dashboard data:', err);
+  }
+
+  if (session?.role === 'reporter' && !session?.activeCompanyId && reporterClients) {
+    const { ReporterAnalytics } = await import('./reporter-analytics');
+    return <ReporterAnalytics session={session} clients={reporterClients} />;
   }
 
   return <DashboardOverview session={session!} company={company} assessment={assessment} score={score} benchmarks={benchmarks} />;

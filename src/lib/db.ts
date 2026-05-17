@@ -1,57 +1,73 @@
 /**
- * ESGwise Database Bridge
- * This file delegates database operations to Local SQLite ONLY.
- * Disconnected from Cloud Firestore as requested.
+ * ESGwise Database — Cloud-Only (Firestore)
+ * 
+ * This file re-exports all database operations from the cloud Firestore
+ * implementation. The local SQLite implementation has been retired in favour
+ * of a single, authoritative Firestore backend.
  */
 
-import * as local from './db-local';
+export {
+  // ── User & Company ──
+  getUserByEmail,
+  createUser,
+  createReporter,
+  createDirectCompany,
+  getUsersByCompany,
+  createCompanyUser,
+  getCompanyById,
+  updateUserPassword,
+  saveResetToken,
+  verifyResetToken,
 
-const USE_LOCAL = true;
+  // ── Reporter / Client Management ──
+  getReporterClients,
+  createClientCompany,
+  updateClientCompany,
+  setCompanyDataMode,
+  getReporterById,
+  getAllReporters,
 
-// Always use local implementation
-const db = local;
+  // ── Assessment ──
+  getAssessment,
+  getAssessmentForCompany,
+  saveAssessment,
 
-export const getUserByEmail = db.getUserByEmail;
-export const createUser = db.createUser;
-export const getAssessment = db.getAssessment;
-export const saveAssessment = db.saveAssessment;
-export const createDocument = db.createDocument;
-export const updateDocumentExtraction = db.updateDocumentExtraction;
-export const getDocuments = db.getDocuments;
-export const getDocumentById = (db as any).getDocumentById;
-export const updateDocumentStatus = db.updateDocumentStatus;
-export const saveKpiProvenanceBatch = db.saveKpiProvenanceBatch;
-export const processKpiActions = db.processKpiActions;
-export const saveChatMessage = db.saveChatMessage;
-export const getChatHistory = db.getChatHistory;
-export const issueCertificate = db.issueCertificate;
-export const getCertificateByCode = db.getCertificateByCode;
-export const getCompanyById = db.getCompanyById;
-export const getAssessmentForCompany = db.getAssessmentForCompany;
-export const getCompanyScore = (db as any).getCompanyScore;
-export const getCertificateForAssessment = db.getCertificateForAssessment;
-export const getIndustryBenchmarks = db.getIndustryBenchmarks;
+  // ── Documents ──
+  createDocument,
+  getDocumentById,
+  updateDocumentExtraction,
+  updateDocumentStatus,
+  getDocuments,
+  saveKpiProvenanceBatch,
+  processKpiActions,
 
-// Admin
-export const getAllUsers = db.getAllUsers;
-export const updateUserAdminStatus = db.updateUserAdminStatus;
-export const deleteUser = db.deleteUser;
-export const getAdminAnalytics = (db as any).getAdminAnalytics;
-export const getAdminCompaniesWithScores = (db as any).getAdminCompaniesWithScores;
+  // ── Chat ──
+  saveChatMessage,
+  getChatHistory,
 
-// Settings
-export const updateUserProfile = (db as any).updateUserProfile;
-export const getTenantSettings = (db as any).getTenantSettings;
-export const updateTenantSettings = (db as any).updateTenantSettings;
-export const getUsersByCompany = (db as any).getUsersByCompany;
-export const createCompanyUser = (db as any).createCompanyUser;
-export const updateUserPassword = (db as any).updateUserPassword;
+  // ── Certificates ──
+  issueCertificate,
+  getCertificateByCode,
+  getCertificateForAssessment,
 
-// Auth
-export const saveResetToken = (db as any).saveResetToken;
-export const verifyResetToken = (db as any).verifyResetToken;
+  // ── Scores & Benchmarks ──
+  getCompanyScore,
+  getIndustryBenchmarks,
 
-// Export default for backwards compatibility with any code calling getDb()
-export default function getDb() {
-  return (local as any).default();
-}
+  // ── Admin ──
+  getAllUsers,
+  updateUserAdminStatus,
+  deleteUser,
+  getAdminAnalytics,
+  getAdminCompaniesWithScores,
+
+  // ── Settings ──
+  updateUserProfile,
+  getTenantSettings,
+  updateTenantSettings,
+
+  // ── Invitations ──
+  createInvitation,
+  verifyInvitation,
+  consumeInvitation,
+} from './db-cloud';

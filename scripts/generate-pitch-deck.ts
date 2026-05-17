@@ -3,11 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const BRAND = { primary: '0F766E', gold: 'B8960C', dark: '1A1A2E', light: 'F0FDF4', blue: '3B82F6', purple: '8B5CF6', red: 'EF4444', gray: '6B7280' };
-const IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\dca7e56f-aef8-4b43-b850-1deabbfe5395';
+const OLD_IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\dca7e56f-aef8-4b43-b850-1deabbfe5395';
+const CURRENT_IMG_DIR = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\ae60c3d1-f5d3-4996-a38a-074a408496e7';
 const OUT_DIR = path.join(process.cwd(), 'docs-private');
 
 function loadImg(name: string) {
-  const p = path.join(IMG_DIR, name);
+  let p = path.join(CURRENT_IMG_DIR, name);
+  if (fs.existsSync(p)) return fs.readFileSync(p);
+  p = path.join(OLD_IMG_DIR, name);
   if (fs.existsSync(p)) return fs.readFileSync(p);
   return null;
 }
@@ -53,10 +56,19 @@ function imgParagraph(imgData: Buffer | null, w = 680, h = 380): Paragraph | nul
 function pageBreak(): Paragraph { return new Paragraph({ children: [new PageBreak()] }); }
 
 async function main() {
-  const landing = loadImg('landing_page_1778814083655.png');
+  const landing = loadImg('home_page_1779034499093.png') || loadImg('landing_page_1778814083655.png');
+  const loginPage = loadImg('login_page_1779034514222.png');
+  const regType = loadImg('registration_type_step_1779034923365.png');
+  const repStep = loadImg('reporter_step_1_1779034943432.png');
+  const compStep = loadImg('company_step_1_1779034984033.png');
   const dashboard = loadImg('dashboard_page_1778814103470.png');
-  const adminTop = loadImg('admin_panel_top_v2_1778814540366.png');
-  const portfolio = loadImg('admin_panel_portfolio_v2_1778814555662.png');
+  const assessManual = loadImg('assessment_page_manual_entry_1778814128573.png');
+  const analysis = loadImg('analysis_page_final_1778814153974.png');
+  const adminTop = loadImg('clients_page_logged_in_1779035033306.png') || loadImg('admin_panel_top_v2_1778814540366.png');
+  const portfolio = loadImg('clients_page_logged_in_1779035033306.png') || loadImg('admin_panel_portfolio_v2_1778814555662.png');
+  const reports = loadImg('reports_page_final_1778814196292.png');
+  const reportPreview = loadImg('admin_report_preview_modal_1778818548316.png');
+  const templateSettings = loadImg('admin_template_settings_expanded_1778818534451.png');
 
   const sections: (Paragraph | Table)[] = [];
 
@@ -104,20 +116,65 @@ async function main() {
 
   // === PRODUCT ===
   sections.push(heading('🏗️ Product Overview'));
+
+  sections.push(heading('Seamless Dual Onboarding', HeadingLevel.HEADING_2, BRAND.dark));
+  sections.push(para('A unified entry point allows both Companies (Self-Service) and Consultants (Reporters) to register and manage their distinct workflows securely.'));
+  const regImg = imgParagraph(regType);
+  if (regImg) sections.push(regImg);
+  
+  sections.push(para('Users can securely log in using the custom authentication flow.'));
+  const logImg = imgParagraph(loginPage);
+  if (logImg) sections.push(logImg);
+  
+  sections.push(para('Consultants (Reporters) are guided through a tailored onboarding flow to set up their consulting practice and manage client companies.'));
+  const repImg = imgParagraph(repStep);
+  if (repImg) sections.push(repImg);
+  
+  sections.push(para('Companies are guided through an onboarding flow to input their sector, size, and other details necessary for the AI-powered ESG assessment.'));
+  const compImg = imgParagraph(compStep);
+  if (compImg) sections.push(compImg);
+  
+  sections.push(pageBreak());
+
   sections.push(heading('Company Dashboard', HeadingLevel.HEADING_2, BRAND.dark));
   sections.push(para('Every registered company gets a personalized dashboard showing their ESG performance across Environmental, Social, and Governance pillars with actionable progress tracking.'));
   const dashImg = imgParagraph(dashboard);
   if (dashImg) sections.push(dashImg);
   sections.push(pageBreak());
 
+  sections.push(heading('ESG Assessment Engine', HeadingLevel.HEADING_2, BRAND.dark));
+  sections.push(para('A guided manual questionnaire covering 50+ ESG indicators across Environmental, Social, and Governance categories. AI extracts indicators seamlessly from documents.'));
+  const assessImg = imgParagraph(assessManual);
+  if (assessImg) sections.push(assessImg);
+  sections.push(pageBreak());
+
+  sections.push(heading('ESG Analysis & Scoring', HeadingLevel.HEADING_2, BRAND.dark));
+  sections.push(para('Multi-stage scoring algorithms produce detailed ESG ratings from raw responses, including strengths, weaknesses, and a final rating (CCC to AAA).'));
+  const anImg = imgParagraph(analysis);
+  if (anImg) sections.push(anImg);
+  sections.push(pageBreak());
+
   sections.push(heading('Consultant Command Center', HeadingLevel.HEADING_2, BRAND.dark));
   sections.push(para('The Admin panel transforms ESGwise into a consulting practice management tool — giving consultants portfolio-wide visibility, per-company scoring breakdowns, and one-click professional advisory report generation.'));
   const adminImg = imgParagraph(adminTop);
   if (adminImg) sections.push(adminImg);
+  
   sections.push(heading('Client Portfolio & Advisory Reports', HeadingLevel.HEADING_2, BRAND.dark));
   sections.push(para('Consultants generate branded, professional PDF and DOCX advisory reports for each client — with strengths, weaknesses, gap analysis, and prioritized action plans.'));
   const portImg = imgParagraph(portfolio);
   if (portImg) sections.push(portImg);
+  
+  sections.push(para('Consultants can preview reports in an interactive modal and tweak templates on the fly.'));
+  const previewImg = imgParagraph(reportPreview);
+  if (previewImg) sections.push(previewImg);
+  const tempImg = imgParagraph(templateSettings);
+  if (tempImg) sections.push(tempImg);
+  sections.push(pageBreak());
+
+  sections.push(heading('Reports History', HeadingLevel.HEADING_2, BRAND.dark));
+  sections.push(para('Centralized view for historical reports, documents, and certificate logs.'));
+  const repHis = imgParagraph(reports);
+  if (repHis) sections.push(repHis);
   sections.push(pageBreak());
 
   // === MARKET SIZE ===
@@ -204,6 +261,21 @@ async function main() {
   sections.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: 'by TechnoSeeds International', font: 'Calibri', size: 28, color: BRAND.gray })] }));
   sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '"We\'re not just building a tool — we\'re building the ESG infrastructure for emerging markets."', font: 'Calibri', size: 24, italics: true, color: BRAND.dark })] }));
   sections.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600 }, children: [new TextRun({ text: '🌐 esgwise.jo  ·  ✉️ invest@esgwise.jo', font: 'Calibri', size: 22, color: BRAND.primary })] }));
+
+  // === APPENDIX: ALL RECORDED SCREENS ===
+  sections.push(pageBreak());
+  sections.push(heading('Appendix: Comprehensive Platform Walkthrough'));
+  sections.push(para('The following screens represent a comprehensive, end-to-end capture of the platform\'s workflows across all user roles.'));
+  
+  const allFiles = fs.readdirSync(CURRENT_IMG_DIR);
+  const autoScreens = allFiles.filter(f => f.startsWith('auto_screen_')).sort((a, b) => {
+    return parseInt(a.split('_')[2]) - parseInt(b.split('_')[2]);
+  });
+  for (const screen of autoScreens) {
+     const imgData = loadImg(screen);
+     const pImg = imgParagraph(imgData);
+     if (pImg) sections.push(pImg);
+  }
 
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Calibri', size: 22 } } } },

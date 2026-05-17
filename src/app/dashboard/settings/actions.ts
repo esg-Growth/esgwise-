@@ -66,7 +66,7 @@ export async function addCompanyAdminUser(name: string, email: string, password:
   const isAdmin = (session.user as any).isAdmin;
   const companyId = (session.user as any).companyId;
 
-  if (!isAdmin && userRole !== 'owner') {
+  if (!isAdmin && userRole !== 'company_admin') {
     throw new Error('Not authorized to perform this action');
   }
 
@@ -81,7 +81,7 @@ export async function addCompanyAdminUser(name: string, email: string, password:
   const passwordHash = await bcrypt.hash(password, salt);
 
   try {
-    await db.createCompanyUser(email, passwordHash, name, companyId || null, makeAdmin ? 'owner' : 'member', makeAdmin);
+    await db.createCompanyUser(email, passwordHash, name, companyId || null, makeAdmin ? 'company_admin' : 'company_member', false);
     revalidatePath('/dashboard/settings');
     return { success: true };
   } catch (error: any) {
