@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Shield, ShieldAlert, Trash2, ShieldCheck, User, Building2, Users, FileText, Activity, CheckCircle, Clock, FileDown, Settings, Eye, X, Palette, Type, Image, Download } from 'lucide-react';
-import { toggleAdminStatus, removeUser } from './actions';
+import { modifyUserRole, removeUser } from './actions';
 import styles from './admin.module.css';
 
 interface AdminUser {
@@ -67,6 +67,8 @@ export function AdminPanel({ initialUsers, analytics, companies = [], tenantSett
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [previewCompany, setPreviewCompany] = useState<CompanyWithScore | null>(null);
+  const [roleModificationUser, setRoleModificationUser] = useState<AdminUser | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'platform_admin' | 'reporter' | 'company_member'>('company_member');
   const isAr = locale === 'ar';
 
   const consultantName = tenantSettings?.consultantName || 'ESGwise Consultant';
@@ -76,20 +78,21 @@ export function AdminPanel({ initialUsers, analytics, companies = [], tenantSett
   const introText = tenantSettings?.introText || 'This advisory report has been prepared to provide a comprehensive assessment of your organization\'s Environmental, Social, and Governance (ESG) performance. Our analysis identifies key strengths, areas for improvement, and actionable recommendations.';
   const closingText = tenantSettings?.closingText || 'We recommend scheduling a follow-up consultation to develop a detailed implementation timeline. Re-assess in 6 months to measure progress.';
 
-  const handleToggleAdmin = async (userId: string, currentIsAdmin: number) => {
-    setIsProcessing(userId);
+  const handleModifyRoleSubmit = async () => {
+    if (!roleModificationUser) return;
+    setIsProcessing(roleModificationUser.id);
     setError(null);
     try {
-      const makeAdmin = currentIsAdmin === 0;
-      const res = await toggleAdminStatus(userId, makeAdmin);
+      const res = await modifyUserRole(roleModificationUser.id, selectedRole);
       if (res.success) {
         setUsers(users.map(u => 
-          u.id === userId 
-            ? { ...u, is_admin: makeAdmin ? 1 : 0, role: makeAdmin ? 'owner' : 'member' } 
+          u.id === roleModificationUser.id 
+            ? { ...u, is_admin: selectedRole === 'platform_admin' ? 1 : 0, role: selectedRole } 
             : u
         ));
+        setRoleModificationUser(null);
       } else {
-        setError(res.error || 'Failed to update user');
+        setError(res.error || 'Failed to update user role');
       }
     } catch (err: any) {
       setError(err.message);
@@ -172,6 +175,70 @@ export function AdminPanel({ initialUsers, analytics, companies = [], tenantSett
   const openPreview = (c: CompanyWithScore) => {
     setPreviewCompany(c);
   };
+
+  const reporters = users.filter(u => u.role === 'reporter');
+  const companyUsers = users.filter(u => u.role !== 'reporter');
+
+  const renderUserRow = (user: AdminUser) => (
+    <tr key={user.id}>
+      <td>
+        <div className={styles.userInfo}>
+          <div className={styles.avatar}>
+            {user.name?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <div className={styles.userDetails}>
+            <span className={styles.userName}>{user.name}</span>
+            <span className={styles.userEmail}>{user.email}</span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span className={styles.companyName}>{user.company_name || '-'}</span>
+      </td>
+      <td>
+        <span className={`${styles.roleBadge} ${user.role === 'reporter' ? styles.roleReporter : user.is_admin ? styles.roleAdmin : styles.roleMember}`}>
+          {user.role === 'reporter' 
+            ? (isAr ? 'مستشار' : 'Reporter')
+            : user.is_admin 
+              ? (isAr ? 'مسؤول' : 'Admin') 
+              : (isAr ? 'عضو' : 'Member')
+          }
+        </span>
+      </td>
+      <td>
+        <span className={styles.date}>{formatDate(user.created_at)}</span>
+      </td>
+      <td>
+        <div className={styles.actions}>
+          <button 
+            className={`btn btn-sm ${styles.btnAction} btn-outline`}
+            onClick={() => {
+              setRoleModificationUser(user);
+              setSelectedRole(
+                user.role === 'reporter' ? 'reporter' : 
+                (user.role === 'platform_admin' || user.is_admin ? 'platform_admin' : 'company_member')
+              );
+            }}
+            disabled={isProcessing === user.id}
+            title={isAr ? 'تعديل الدور' : 'Modify Role'}
+          >
+            <Settings size={16} />
+            <span>{isAr ? 'تعديل الدور' : 'Modify Role'}</span>
+          </button>
+          
+          <button 
+            className={`btn btn-ghost btn-icon btn-sm ${styles.btnAction}`}
+            style={{ color: 'var(--color-danger)' }}
+            onClick={() => handleDeleteUser(user.id)}
+            disabled={isProcessing === user.id + '-delete'}
+            title={isAr ? 'حذف المستخدم' : 'Delete User'}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
     <div className={styles.adminDashboard}>
@@ -445,58 +512,27 @@ export function AdminPanel({ initialUsers, analytics, companies = [], tenantSett
               </tr>
             </thead>
             <tbody>
-              {users.map(user => (
-                <tr key={user.id}>
-                  <td>
-                    <div className={styles.userInfo}>
-                      <div className={styles.avatar}>
-                        {user.name?.[0]?.toUpperCase() || 'U'}
-                      </div>
-                      <div className={styles.userDetails}>
-                        <span className={styles.userName}>{user.name}</span>
-                        <span className={styles.userEmail}>{user.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={styles.companyName}>{user.company_name || '-'}</span>
-                  </td>
-                  <td>
-                    <span className={`${styles.roleBadge} ${user.is_admin ? styles.roleAdmin : styles.roleMember}`}>
-                      {user.is_admin 
-                        ? (isAr ? 'مسؤول' : 'Admin') 
-                        : (isAr ? 'عضو' : 'Member')
-                      }
-                    </span>
-                  </td>
-                  <td>
-                    <span className={styles.date}>{formatDate(user.created_at)}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button 
-                        className={`btn btn-sm ${styles.btnAction} ${user.is_admin ? 'btn-outline' : 'btn-primary'}`}
-                        onClick={() => handleToggleAdmin(user.id, user.is_admin)}
-                        disabled={isProcessing === user.id}
-                        title={user.is_admin ? (isAr ? 'إلغاء الصلاحيات' : 'Revoke Admin') : (isAr ? 'ترقية لمسؤول' : 'Make Admin')}
-                      >
-                        {user.is_admin ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
-                        <span>{user.is_admin ? (isAr ? 'إلغاء' : 'Revoke') : (isAr ? 'ترقية' : 'Promote')}</span>
-                      </button>
-                      
-                      <button 
-                        className={`btn btn-ghost btn-icon btn-sm ${styles.btnAction}`}
-                        style={{ color: 'var(--color-danger)' }}
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={isProcessing === user.id + '-delete'}
-                        title={isAr ? 'حذف المستخدم' : 'Delete User'}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {reporters.length > 0 && (
+                <>
+                  <tr style={{ background: 'var(--color-bg-subtle)' }}>
+                    <td colSpan={5} style={{ fontWeight: 600, color: 'var(--color-text-secondary)', padding: '8px 16px', borderBottom: '1px solid var(--color-border)' }}>
+                      {isAr ? 'المستشارين' : 'Reporters'}
+                    </td>
+                  </tr>
+                  {reporters.map(renderUserRow)}
+                </>
+              )}
+              
+              {companyUsers.length > 0 && (
+                <>
+                  <tr style={{ background: 'var(--color-bg-subtle)' }}>
+                    <td colSpan={5} style={{ fontWeight: 600, color: 'var(--color-text-secondary)', padding: '8px 16px', borderBottom: '1px solid var(--color-border)' }}>
+                      {isAr ? 'مستخدمي الشركات' : 'Company Users'}
+                    </td>
+                  </tr>
+                  {companyUsers.map(renderUserRow)}
+                </>
+              )}
               
               {users.length === 0 && (
                 <tr>
@@ -619,6 +655,54 @@ export function AdminPanel({ initialUsers, analytics, companies = [], tenantSett
                   © {new Date().getFullYear()} {brandName}. This report has been prepared by {consultantName}.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {roleModificationUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal} style={{ maxWidth: '400px' }}>
+            <div className={styles.modalHeader}>
+              <h2>{isAr ? 'تعديل دور المستخدم' : 'Modify User Role'}</h2>
+              <button className="btn btn-ghost btn-icon" onClick={() => setRoleModificationUser(null)}><X size={20} /></button>
+            </div>
+            <div className={styles.modalBody}>
+              <p style={{ marginBottom: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                {isAr ? 'اختر الدور المناسب للمستخدم' : 'Select the appropriate role for the user'} <strong style={{color: 'var(--color-text)'}}>{roleModificationUser.name}</strong>
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', background: selectedRole === 'company_member' ? 'var(--color-background-alt)' : 'transparent', borderColor: selectedRole === 'company_member' ? 'var(--color-primary)' : 'var(--color-border)' }}>
+                  <input type="radio" name="role" value="company_member" checked={selectedRole === 'company_member'} onChange={() => setSelectedRole('company_member')} style={{ marginTop: '0.25rem' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600 }}>{isAr ? 'عضو شركة' : 'Company User'}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{isAr ? 'مستخدم عادي تابع لشركة محددة' : 'Standard user belonging to a specific company'}</span>
+                  </div>
+                </label>
+                
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', background: selectedRole === 'reporter' ? 'var(--color-background-alt)' : 'transparent', borderColor: selectedRole === 'reporter' ? 'var(--color-primary)' : 'var(--color-border)' }}>
+                  <input type="radio" name="role" value="reporter" checked={selectedRole === 'reporter'} onChange={() => setSelectedRole('reporter')} style={{ marginTop: '0.25rem' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600 }}>{isAr ? 'مستشار' : 'Reporter'}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{isAr ? 'يمكنه إدارة شركات وتقييمات متعددة' : 'Can manage multiple client companies and assessments'}</span>
+                  </div>
+                </label>
+                
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', background: selectedRole === 'platform_admin' ? 'var(--color-background-alt)' : 'transparent', borderColor: selectedRole === 'platform_admin' ? 'var(--color-primary)' : 'var(--color-border)' }}>
+                  <input type="radio" name="role" value="platform_admin" checked={selectedRole === 'platform_admin'} onChange={() => setSelectedRole('platform_admin')} style={{ marginTop: '0.25rem' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600 }}>{isAr ? 'مسؤول النظام' : 'Admin'}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{isAr ? 'وصول كامل لجميع ميزات الإدارة' : 'Full access to all administrative features'}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button className="btn btn-outline" onClick={() => setRoleModificationUser(null)}>{isAr ? 'إلغاء' : 'Cancel'}</button>
+              <button className="btn btn-primary" onClick={handleModifyRoleSubmit} disabled={isProcessing === roleModificationUser.id}>
+                {isProcessing === roleModificationUser.id ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ التغييرات' : 'Save Changes')}
+              </button>
             </div>
           </div>
         </div>

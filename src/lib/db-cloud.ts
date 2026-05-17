@@ -468,6 +468,31 @@ export async function updateUserAdminStatus(userId: string, isAdmin: boolean) {
   });
 }
 
+export async function updateUserRole(userId: string, role: 'platform_admin' | 'reporter' | 'company_member') {
+  const is_admin = role === 'platform_admin' ? 1 : 0;
+  const updates: any = {
+    role,
+    is_admin,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (role === 'reporter') {
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    if (userData && !userData.reporter_id) {
+      const reporterRef = await db.collection('reporters').add({
+        name: userData.name || 'Reporter',
+        firm_name: '',
+        email: userData.email || '',
+        created_at: new Date().toISOString(),
+      });
+      updates.reporter_id = reporterRef.id;
+    }
+  }
+
+  await db.collection('users').doc(userId).update(updates);
+}
+
 export async function deleteUser(userId: string) {
   await db.collection('users').doc(userId).delete();
 }

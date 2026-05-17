@@ -15,10 +15,18 @@
   bottom: 0;
   left: 0;
   z-index: 50;
-  transition: width var(--transition-base);
+  transition: width var(--transition-base), background-color var(--transition-base);
   overflow: hidden;
 }
 .sidebarCollapsed { width: var(--sidebar-collapsed); }
+
+.sidebarAdmin {
+  background-color: #0f172a; /* Slate 900 */
+}
+
+.sidebarReporter {
+  background-color: #1e1b4b; /* Indigo 950 */
+}
 
 .sidebarHeader {
   display: flex;
@@ -74,6 +82,16 @@
   height: 1px;
   background: rgba(255,255,255,0.08);
   margin: var(--space-sm) var(--space-md);
+}
+
+.navSectionHeader {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 14px 8px;
+  margin-top: 4px;
 }
 
 .sidebarFooter {
@@ -167,13 +185,24 @@
   height: var(--header-height);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 var(--space-lg);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-card);
   position: sticky;
   top: 0;
   z-index: 40;
+  transition: background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.headerAdmin {
+  background-color: var(--color-gov-bg);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2); /* using var(--color-gov) slightly transparent */
+}
+
+.headerReporter {
+  background-color: rgba(139, 92, 246, 0.05); /* very light purple/accent */
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
 }
 .headerRight {
   display: flex;

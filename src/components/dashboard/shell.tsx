@@ -44,6 +44,8 @@ export function DashboardShell({ session, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { update } = useSession();
+  const isAdminRoute = pathname.startsWith('/dashboard/admin');
+  const isReporterRoute = pathname.startsWith('/dashboard/clients');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -100,7 +102,7 @@ export function DashboardShell({ session, children }: Props) {
   return (
     <div className={styles.shell}>
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${sidebarOpen ? '' : styles.sidebarCollapsed} ${mobileMenuOpen ? styles.sidebarMobileOpen : ''}`}>
+      <aside className={`${styles.sidebar} ${isAdminRoute ? styles.sidebarAdmin : isReporterRoute ? styles.sidebarReporter : ''} ${sidebarOpen ? '' : styles.sidebarCollapsed} ${mobileMenuOpen ? styles.sidebarMobileOpen : ''}`}>
         <div className={styles.sidebarHeader}>
           <Link href="/dashboard" className={styles.sidebarLogo}>
             <Leaf size={24} />
@@ -148,17 +150,30 @@ export function DashboardShell({ session, children }: Props) {
         )}
 
         <nav className={styles.sidebarNav}>
-          {NAV_ITEMS.map(item => (
-            <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
-              <item.icon size={20} />
-              {sidebarOpen && <span>{t(item.label)}</span>}
-            </Link>
-          ))}
-
-          {session.role === 'reporter' && (
+          {isAdminRoute ? (
             <>
-              <div className={styles.navDivider} />
+              <div className={styles.navSectionHeader}>{isAr ? 'لوحة الإدارة' : 'Administration'}</div>
+              {ADMIN_ITEMS.map(item => (
+                <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                  <item.icon size={20} />
+                  {sidebarOpen && <span>{t(item.label)}</span>}
+                </Link>
+              ))}
+            </>
+          ) : isReporterRoute ? (
+            <>
+              <div className={styles.navSectionHeader}>{isAr ? 'إدارة العملاء' : 'Client Management'}</div>
               {REPORTER_ITEMS.map(item => (
+                <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
+                  <item.icon size={20} />
+                  {sidebarOpen && <span>{t(item.label)}</span>}
+                </Link>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className={styles.navSectionHeader}>{isAr ? 'مساحة الشركة' : 'Company Workspace'}</div>
+              {NAV_ITEMS.map(item => (
                 <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
                   <item.icon size={20} />
                   {sidebarOpen && <span>{t(item.label)}</span>}
@@ -167,16 +182,77 @@ export function DashboardShell({ session, children }: Props) {
             </>
           )}
 
-          {session.isAdmin && (
-            <>
+          {/* Role Switcher Radio Group (Expanded Sidebar) */}
+          {(session.role === 'reporter' || session.isAdmin) && sidebarOpen && (
+            <div style={{ marginTop: '1rem' }}>
               <div className={styles.navDivider} />
-              {ADMIN_ITEMS.map(item => (
-                <Link key={item.href} href={item.href} className={`${styles.navItem} ${isActive(item.href) ? styles.navItemActive : ''}`} onClick={() => setMobileMenuOpen(false)}>
-                  <item.icon size={20} />
-                  {sidebarOpen && <span>{t(item.label)}</span>}
-                </Link>
-              ))}
-            </>
+              <div className={styles.navSectionHeader} style={{ marginBottom: '0.75rem' }}>{isAr ? 'وضع العمل (الدور)' : 'Active Role (Mode)'}</div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0 0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: 'var(--radius-md)', background: (!isAdminRoute && !isReporterRoute) ? 'var(--color-background-alt)' : 'transparent', border: (!isAdminRoute && !isReporterRoute) ? '1px solid var(--color-primary)' : '1px solid transparent' }}>
+                  <input type="radio" name="sidebar_mode" checked={!isAdminRoute && !isReporterRoute} onChange={() => { setMobileMenuOpen(false); router.push('/dashboard'); }} style={{ accentColor: 'var(--color-primary)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                    <Briefcase size={16} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: (!isAdminRoute && !isReporterRoute) ? 600 : 400 }}>{isAr ? 'مساحة الشركة' : 'Company'}</span>
+                  </div>
+                </label>
+
+                {(session.role === 'reporter' || session.isAdmin) && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: 'var(--radius-md)', background: isReporterRoute ? 'var(--color-background-alt)' : 'transparent', border: isReporterRoute ? '1px solid #8b5cf6' : '1px solid transparent' }}>
+                    <input type="radio" name="sidebar_mode" checked={isReporterRoute} onChange={() => { setMobileMenuOpen(false); router.push('/dashboard/clients'); }} style={{ accentColor: '#8b5cf6' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                      <Users size={16} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: isReporterRoute ? 600 : 400 }}>{isAr ? 'وضع المستشار' : 'Reporter'}</span>
+                    </div>
+                  </label>
+                )}
+
+                {session.isAdmin && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: 'var(--radius-md)', background: isAdminRoute ? 'var(--color-background-alt)' : 'transparent', border: isAdminRoute ? '1px solid var(--color-gov)' : '1px solid transparent' }}>
+                    <input type="radio" name="sidebar_mode" checked={isAdminRoute} onChange={() => { setMobileMenuOpen(false); router.push('/dashboard/admin'); }} style={{ accentColor: 'var(--color-gov)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                      <Shield size={16} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: isAdminRoute ? 600 : 400 }}>{isAr ? 'وضع الإدارة' : 'Admin'}</span>
+                    </div>
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Role Switcher (Collapsed Sidebar) */}
+          {(session.role === 'reporter' || session.isAdmin) && !sidebarOpen && (
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+              <div className={styles.navDivider} style={{ width: '100%' }} />
+              <button 
+                className={`${styles.navItem} ${(!isAdminRoute && !isReporterRoute) ? styles.navItemActive : ''}`}
+                onClick={() => { setMobileMenuOpen(false); router.push('/dashboard'); }}
+                title={isAr ? 'مساحة الشركة' : 'Company'}
+                style={{ justifyContent: 'center' }}
+              >
+                <Briefcase size={20} />
+              </button>
+              {(session.role === 'reporter' || session.isAdmin) && (
+                <button 
+                  className={`${styles.navItem} ${isReporterRoute ? styles.navItemActive : ''}`}
+                  onClick={() => { setMobileMenuOpen(false); router.push('/dashboard/clients'); }}
+                  title={isAr ? 'وضع المستشار' : 'Reporter'}
+                  style={{ justifyContent: 'center', color: isReporterRoute ? '#8b5cf6' : undefined }}
+                >
+                  <Users size={20} />
+                </button>
+              )}
+              {session.isAdmin && (
+                <button 
+                  className={`${styles.navItem} ${isAdminRoute ? styles.navItemActive : ''}`}
+                  onClick={() => { setMobileMenuOpen(false); router.push('/dashboard/admin'); }}
+                  title={isAr ? 'وضع الإدارة' : 'Admin'}
+                  style={{ justifyContent: 'center', color: isAdminRoute ? 'var(--color-gov)' : undefined }}
+                >
+                  <Shield size={20} />
+                </button>
+              )}
+            </div>
           )}
         </nav>
 
@@ -203,10 +279,44 @@ export function DashboardShell({ session, children }: Props) {
         )}
 
         {/* Header */}
-        <header className={styles.header}>
-          <button className={`btn btn-ghost btn-icon ${styles.mobileMenuBtn}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <header className={`${styles.header} ${isAdminRoute ? styles.headerAdmin : isReporterRoute ? styles.headerReporter : ''}`}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className={`btn btn-ghost btn-icon ${styles.mobileMenuBtn}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            {isAdminRoute && (
+              <span style={{ 
+                backgroundColor: 'var(--color-gov)', 
+                color: 'white', 
+                padding: '4px 10px', 
+                borderRadius: 'var(--radius-full)', 
+                fontSize: '0.75rem', 
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <Shield size={14} />
+                {isAr ? 'وضع الإدارة' : 'Admin Mode'}
+              </span>
+            )}
+            {isReporterRoute && (
+              <span style={{ 
+                backgroundColor: '#8b5cf6', 
+                color: 'white', 
+                padding: '4px 10px', 
+                borderRadius: 'var(--radius-full)', 
+                fontSize: '0.75rem', 
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <Users size={14} />
+                {isAr ? 'وضع المستشار' : 'Reporter Mode'}
+              </span>
+            )}
+          </div>
 
           <div className={styles.headerRight}>
             <button className="btn btn-ghost btn-sm" onClick={() => setLocale(isAr ? 'en' : 'ar')}>

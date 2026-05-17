@@ -58,6 +58,7 @@ export {
   // ── Admin ──
   getAllUsers,
   updateUserAdminStatus,
+  updateUserRole,
   deleteUser,
   getAdminAnalytics,
   getAdminCompaniesWithScores,
