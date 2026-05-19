@@ -549,14 +549,13 @@ export async function getAdminAnalytics() {
 
 export async function getAdminCompaniesWithScores() {
   const companiesSnap = await db.collection('companies').get();
-  const results: any[] = [];
-  for (const doc of companiesSnap.docs) {
+  const promises = companiesSnap.docs.map(async (doc) => {
     const company = { id: doc.id, ...doc.data() } as any;
     const scoreSnap = await db.collection('esg_scores').where('company_id', '==', doc.id).orderBy('created_at', 'desc').limit(1).get();
     const score = scoreSnap.empty ? null : scoreSnap.docs[0].data();
-    results.push({ ...company, score });
-  }
-  return results;
+    return { ...company, score };
+  });
+  return await Promise.all(promises);
 }
 
 // ═══════════════════════════════════════════════════════════
